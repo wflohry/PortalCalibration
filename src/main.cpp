@@ -8,8 +8,8 @@
 
 int main(int argc, char* argv[])
 {
-  IplImage* texture = cvLoadImage("Fish.jpg");
-  cvShowImage("Fish.jpg", texture);
+  IplImage* texture = cvLoadImage("96-3.png");
+  cvShowImage("96-3.png", texture);
 
   // Idle until the user hits the "Esc" key.
   while( 1 ) {
