@@ -1,12 +1,20 @@
+// Standard C++ includes
 #include <stdio.h>
 #include <stdlib.h>
-#include "ImageIO.h"
+
+// OpenCV includes
+#include <cv.h>
+#include <highgui.h>
 
 int main(int argc, char* argv[])
 {
-	IplImage* texture = io.readImage("Fish.jpg");
-	
+  IplImage* texture = cvLoadImage("Fish.jpg");
+  cvShowImage("Fish.jpg", texture);
 
-    
-    return 0;
+  // Idle until the user hits the "Esc" key.
+  while( 1 ) {
+    if( cvWaitKey( 100 ) == 27 ) break;
+  }
+
+  return 0;
 }

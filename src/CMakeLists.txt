@@ -23,9 +23,6 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 set(SOURCES
     main.cpp
-	ImageIO.cpp
-	
-    ImageIO.h
 	)
 	
 add_executable(${PROJECT_NAME}
