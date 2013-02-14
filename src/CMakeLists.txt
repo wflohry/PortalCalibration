@@ -23,6 +23,10 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 set(SOURCES
     main.cpp
+	calibrate.cpp
+	calibrate.h
+	cameraInput.h
+	cameraInput.cpp
 	)
 	
 add_executable(${PROJECT_NAME}
