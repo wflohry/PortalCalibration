@@ -215,9 +215,12 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 
 	//create matrices to hold data
 	CvMat* image_points		= cvCreateMat(n_boards*board_n, 2, CV_32FC1);
-	CvMat* object_points	= cvCreateMat(n_boards*board_n, 3, CV_32FC1);
+	auto object_points = shared_ptr<CvMat>( cvCreateMat(n_boards*board_n, 3, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+
+	//cvReleaseMat(&object_points);
 	CvMat* point_counts		= cvCreateMat(n_boards,1,CV_32SC1);
-	CvMat* intrinsic_matrix = cvCreateMat(3, 3, CV_32FC1);
+	auto intrinsic_matrix = shared_ptr<CvMat>( cvCreateMat(3, 3, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+
 	CvMat* distortion_coeffs= cvCreateMat(5, 1, CV_32FC1);
 
 	//an array for the corner points
@@ -232,40 +235,44 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 	
 	IplImage *gray_image = cvCreateImage(cvGetSize(image),8,1);
 
-	
-	
 	//Loop continues until we have "n_boards" successful captures
 	//A successful capture means that all the corners on the board are found
 
-	while (successes < n_boards){
-		//while(1){
+	while (successes < n_boards && image)
+	{
 		//Skip ever "board_dt" frames to allow user to move chessboard
 		if(frame++ % board_dt == 0){
 			//Find chessboard corners:
 			int found = cvFindChessboardCorners(image, board_sz, corners, &corner_count, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
 		
-			//Get subpixel accuracy on those corners
-			cvCvtColor(image, gray_image, CV_BGR2GRAY);
-			cvFindCornerSubPix(gray_image, corners, corner_count, cvSize(11,11), cvSize(-1,-1), cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1));
+			if(found)
+			{
+				//Get subpixel accuracy on those corners
+				cvCvtColor(image, gray_image, CV_BGR2GRAY);
+				cvFindCornerSubPix(gray_image, corners, corner_count, cvSize(11,11), cvSize(-1,-1), cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1));
 
-			//Draw it
-			cvDrawChessboardCorners(image, board_sz, corners, corner_count, found);
-			cvShowImage("Calibration", image);
-			
-			//If we got a good board, add it to our data
-			if (corner_count == board_n ){
-				step = successes * board_n;
-				for (int i = step, j=0; j<board_n; ++i,++j){
-					CV_MAT_ELEM(*image_points, float, i, 0) = corners[j].x;
-					CV_MAT_ELEM(*image_points, float, i, 1) = corners[j].y;
-					CV_MAT_ELEM(*object_points,float, i, 0) = j/board_w;
-					CV_MAT_ELEM(*object_points,float, i, 1) = j%board_w;
-					CV_MAT_ELEM(*object_points,float, i, 2) = 0.0f;
+				//Draw it
+				cvDrawChessboardCorners(image, board_sz, corners, corner_count, found);
+
+				//If we got a good board, add it to our data
+				if (corner_count == board_n )
+				{
+					step = successes * board_n;
+					for (int i = step, j=0; j<board_n; ++i,++j){
+						CV_MAT_ELEM(*image_points, float, i, 0) = corners[j].x;
+						CV_MAT_ELEM(*image_points, float, i, 1) = corners[j].y;
+						CV_MAT_ELEM(*object_points,float, i, 0) = j/board_w;
+						CV_MAT_ELEM(*object_points,float, i, 1) = j%board_w;
+						CV_MAT_ELEM(*object_points,float, i, 2) = 0.0f;
+					}
+
+					CV_MAT_ELEM(*point_counts, int, successes, 0) = board_n;
+					successes++;
 				}
-				CV_MAT_ELEM(*point_counts, int, successes, 0) = board_n;
-				successes++;
 			}
 		}//end skip board_dt between chessboard capture
+
+		cvShowImage("Calibration", image);
 
 		//Handle pause/unpause and ESC
 		int c = cvWaitKey(15);
@@ -299,10 +306,11 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 		CV_MAT_ELEM( *object_points2, float, i, 2) =
 			CV_MAT_ELEM( *object_points, float, i, 2);
 	}
-	for(int i = 0; i<successes; i++){
+
+	for(int i = 0; i<successes; ++i)
+	{
 		CV_MAT_ELEM( *point_counts2, int, i, 0) = CV_MAT_ELEM(*point_counts, int, i, 0);
 	}
-	cvReleaseMat(&object_points);
 	cvReleaseMat(&image_points);
 	cvReleaseMat(&point_counts);
 
@@ -314,11 +322,11 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 	CV_MAT_ELEM( *intrinsic_matrix, float, 1, 1) = 1.0f;
 
 	//CALIBRATE THE CAMERA!
-	cvCalibrateCamera2( object_points2, image_points2, point_counts2, cvGetSize(image), intrinsic_matrix, distortion_coeffs, NULL, NULL, 0 //CV_CALIB_FIX_ASPECT_RATIO
+	cvCalibrateCamera2( object_points2, image_points2, point_counts2, cvGetSize(image), intrinsic_matrix.get(), distortion_coeffs, NULL, NULL, 0 //CV_CALIB_FIX_ASPECT_RATIO
 		);
 
 	//SAVE THE INTRINSICS AND DISTORTIONS
-	cvSave("Intrinsics.xml", intrinsic_matrix);
+	cvSave("Intrinsics.xml", intrinsic_matrix.get());
 	cvSave("Distortion.xml", distortion_coeffs);
 
 	//EXAMPLE OF LOADING THESE MATRICES BACK IN:
@@ -357,3 +365,7 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 
 	}
 
+	shared_ptr<CvMat> Calibrate::grabViews(CvCapture* capture, int board_w, int board_h, int number_of_views)
+	{
+		return nullptr;
+	}

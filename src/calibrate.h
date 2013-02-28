@@ -24,6 +24,9 @@ public:
 	void invertVideo(CvCapture* capture);
 
 	void calibrateChessboard(CvCapture* capture, int board_w, int board_h, int number_of_views);
+
+private:
+	shared_ptr<CvMat> grabViews(CvCapture* capture, int board_w, int board_h, int number_of_views);
 };
 
 #endif // _H_PORTAL_CALIBRATION_CALIBRATE_
