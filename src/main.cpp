@@ -13,7 +13,7 @@ Calibrate* cal;
 
 //new main method for video capture (FROM BOOK)
 int main(int argc, char* argv[]){
-	CvCapture* cap = cvCreateCameraCapture(-1);
+	CvCapture* cap = cvCreateCameraCapture(1);
 	assert(cap != NULL);
 	
 	//cal->invertVideo(cap);

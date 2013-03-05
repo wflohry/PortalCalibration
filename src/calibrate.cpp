@@ -214,26 +214,32 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 	cvNamedWindow("Calibration");
 
 	//create matrices to hold data
-	CvMat* image_points		= cvCreateMat(n_boards*board_n, 2, CV_32FC1);
+
+	auto image_points =  shared_ptr<CvMat>( cvCreateMat(n_boards*board_n, 2, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
 	auto object_points = shared_ptr<CvMat>( cvCreateMat(n_boards*board_n, 3, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
 
-	//cvReleaseMat(&object_points);
-	CvMat* point_counts		= cvCreateMat(n_boards,1,CV_32SC1);
+	auto point_counts =  shared_ptr<CvMat>( cvCreateMat(n_boards,1,CV_32SC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
 	auto intrinsic_matrix = shared_ptr<CvMat>( cvCreateMat(3, 3, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
 
-	CvMat* distortion_coeffs= cvCreateMat(5, 1, CV_32FC1);
+	auto distortion_coeffs = shared_ptr<CvMat>( cvCreateMat(5, 1, CV_32FC1) , [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
 
 	//an array for the corner points
+	
+	//HOW DO I RELEASE THIS???????
+	//auto corners = shared_ptr<CvPoint2D32f> ( new CvPoint2D32f[ board_n ], [] (CvMat* ptr) { /*?????? }*/ );
+	
 	CvPoint2D32f* corners = new CvPoint2D32f[ board_n ];
+	
 	int corner_count;
 	int successes = 0;
 	int step, frame = 0;
 
 	//Create images
-	IplImage *image = cvQueryFrame(capture);
-	//IplImage *image = cvLoadImage("monkey.jpg");
+	//IplImage *image = cvQueryFrame(capture);
+	auto image = shared_ptr<IplImage>( cvQueryFrame(capture), [] (IplImage* ptr) {cvReleaseImage(&ptr); } );
 	
-	IplImage *gray_image = cvCreateImage(cvGetSize(image),8,1);
+	//IplImage *gray_image = cvCreateImage(cvGetSize(image.get()),8,1);
+	auto gray_image = shared_ptr<IplImage>( cvCreateImage(cvGetSize(image.get()),8,1), [] (IplImage* ptr) {cvReleaseImage(&ptr); } );
 
 	//Loop continues until we have "n_boards" successful captures
 	//A successful capture means that all the corners on the board are found
@@ -243,16 +249,16 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 		//Skip ever "board_dt" frames to allow user to move chessboard
 		if(frame++ % board_dt == 0){
 			//Find chessboard corners:
-			int found = cvFindChessboardCorners(image, board_sz, corners, &corner_count, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
+			int found = cvFindChessboardCorners(image.get(), board_sz, corners/*.get()*/, &corner_count, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
 		
 			if(found)
 			{
 				//Get subpixel accuracy on those corners
-				cvCvtColor(image, gray_image, CV_BGR2GRAY);
-				cvFindCornerSubPix(gray_image, corners, corner_count, cvSize(11,11), cvSize(-1,-1), cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1));
+				cvCvtColor(image.get(), gray_image.get(), CV_BGR2GRAY);
+				cvFindCornerSubPix(gray_image.get(), corners/*.get*/, corner_count, cvSize(11,11), cvSize(-1,-1), cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1));
 
 				//Draw it
-				cvDrawChessboardCorners(image, board_sz, corners, corner_count, found);
+				cvDrawChessboardCorners(image.get(), board_sz, corners/*.get()*/, corner_count, found);
 
 				//If we got a good board, add it to our data
 				if (corner_count == board_n )
@@ -272,7 +278,8 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 			}
 		}//end skip board_dt between chessboard capture
 
-		cvShowImage("Calibration", image);
+		//FAILS HERE SECOND TIME THROUGH THE LOOP
+		cvShowImage("Calibration", image.get());
 
 		//Handle pause/unpause and ESC
 		int c = cvWaitKey(15);
@@ -284,14 +291,19 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 		}
 		if (c == 27)
 			return;
-		image = cvQueryFrame(capture); //Get next image
+		
+		//WHATS WRONG HERE???????
+		image.reset(cvQueryFrame(capture)); //Get next image
 
 	} //END COLLECTION WHILE LOOP
 
 	//ALLOCATE MATRICES ACCORDING TO HOW MANY CHESSBOARDS FOUND
-	CvMat* object_points2 = cvCreateMat(successes*board_n, 3, CV_32FC1);
-	CvMat* image_points2 = cvCreateMat(successes*board_n, 2, CV_32FC1);
-	CvMat* point_counts2 = cvCreateMat(successes, 1, CV_32SC1);
+	auto object_points2 =  shared_ptr<CvMat>( cvCreateMat(successes*board_n, 3, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+	//CvMat* object_points2 = cvCreateMat(successes*board_n, 3, CV_32FC1);
+	auto image_points2 =  shared_ptr<CvMat>(cvCreateMat(successes*board_n, 2, CV_32FC1) , [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+	//CvMat* image_points2 = cvCreateMat(successes*board_n, 2, CV_32FC1);
+	auto point_counts2 =  shared_ptr<CvMat>(cvCreateMat(successes, 1, CV_32SC1) , [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+	//CvMat* point_counts2 = cvCreateMat(successes, 1, CV_32SC1);
 	
 	//TRANSFER THE POINTS INTO THE CORRECT SIZE MATRICES
 	for (int i = 0; i<successes*board_n; ++i) {
@@ -311,8 +323,6 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 	{
 		CV_MAT_ELEM( *point_counts2, int, i, 0) = CV_MAT_ELEM(*point_counts, int, i, 0);
 	}
-	cvReleaseMat(&image_points);
-	cvReleaseMat(&point_counts);
 
 	//At this point we have all the chessboard corners we need.
 	//Initialize the intrinsic matrix such that the two focal
@@ -322,30 +332,36 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 	CV_MAT_ELEM( *intrinsic_matrix, float, 1, 1) = 1.0f;
 
 	//CALIBRATE THE CAMERA!
-	cvCalibrateCamera2( object_points2, image_points2, point_counts2, cvGetSize(image), intrinsic_matrix.get(), distortion_coeffs, NULL, NULL, 0 //CV_CALIB_FIX_ASPECT_RATIO
+	cvCalibrateCamera2( object_points2.get(), image_points2.get(), point_counts2.get(), cvGetSize(image.get()), intrinsic_matrix.get(), distortion_coeffs.get(), NULL, NULL, 0 //CV_CALIB_FIX_ASPECT_RATIO
 		);
 
 	//SAVE THE INTRINSICS AND DISTORTIONS
 	cvSave("Intrinsics.xml", intrinsic_matrix.get());
-	cvSave("Distortion.xml", distortion_coeffs);
+	cvSave("Distortion.xml", distortion_coeffs.get());
 
 	//EXAMPLE OF LOADING THESE MATRICES BACK IN:
-	CvMat *intrinsic = (CvMat*)cvLoad("Intrinsics.xml");
-	CvMat *distortion = (CvMat*)cvLoad("Distortion.xml");
-
+	//CvMat *intrinsic = (CvMat*)cvLoad("Intrinsics.xml");
+	auto intrinsic =  shared_ptr<CvMat>((CvMat*)cvLoad("Intrinsics.xml"), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+	//CvMat *distortion = (CvMat*)cvLoad("Distortion.xml");
+	auto distortion =  shared_ptr<CvMat>((CvMat*)cvLoad("Distortion.xml"), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+	
+	
 	//Build the undistort map that we  will use for all subsequent frames.
-	IplImage* mapx = cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1);
-	IplImage* mapy = cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1);
-	cvInitUndistortMap(intrinsic, distortion, mapx, mapy);
+	//IplImage* mapx = cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1);
+	auto mapx =  shared_ptr<IplImage>( cvCreateImage( cvGetSize(image.get()), IPL_DEPTH_32F, 1)  , [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
+	//IplImage* mapy = cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1);
+	auto mapy =  shared_ptr<IplImage>( cvCreateImage( cvGetSize(image.get()), IPL_DEPTH_32F, 1)  , [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
+	
+	cvInitUndistortMap(intrinsic.get(), distortion.get(), mapx.get(), mapy.get());
 
 	//Just run the camera to the screen, now showing the raw and the undistorted image
 	cvNamedWindow("Undistort");
 	while (image){
-		IplImage *t = cvCloneImage(image);
-		cvShowImage("Calibration", image); //Show raw image
-		cvRemap(t, image, mapx, mapy); //Undistort image
-		cvReleaseImage(&t);
-		cvShowImage("Undistort", image); //Show corrected image
+		//IplImage *t = cvCloneImage(image);
+		auto t =  shared_ptr<IplImage>( cvCloneImage(image.get()) , [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
+		cvShowImage("Calibration", image.get()); //Show raw image
+		cvRemap(t.get(), image.get(), mapx.get(), mapy.get()); //Undistort image
+		cvShowImage("Undistort", image.get()); //Show corrected image
 
 		//Handle pause/unpause and ESC
 		//Handle pause/unpause and ESC
@@ -358,7 +374,8 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 		}
 		if (c == 27)
 			break;
-		image = cvQueryFrame(capture);
+		//what do i do???
+		image.reset(cvQueryFrame(capture));
 	}
 
 	return;
