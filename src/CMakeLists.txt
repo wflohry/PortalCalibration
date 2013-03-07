@@ -15,8 +15,13 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_SOURCE_DIR}/../CMakeModule
 ###
 # Perform build configuration of dependencies
 find_package(OpenCV REQUIRED)
-
 include_directories(${OpenCV_INCLUDE_DIRS})
+set (LIBS ${LIBS} ${OpenCV_LIBS})
+
+## QT Related stuff
+find_package(Qt4 COMPONENTS QtCore REQUIRED)
+include(${QT_USE_FILE})
+set (LIBS ${LIBS} ${QT_LIBRARIES})
 
 ###
 # Build the project
