@@ -4,6 +4,8 @@
 #include <cv.h>
 #include <highgui.h>
 
+#include <lens\ICamera.h>
+
 class Calibrate
 {
 private:
@@ -23,7 +25,7 @@ public:
 	void logPolarVideo(CvCapture* capture);
 	void invertVideo(CvCapture* capture);
 
-	void calibrateChessboard(CvCapture* capture, int board_w, int board_h, int number_of_views);
+	void calibrateChessboard(shared_ptr<lens::ICamera> capture, int board_w, int board_h, int number_of_views);
 
 private:
 	shared_ptr<CvMat> grabViews(CvCapture* capture, int board_w, int board_h, int number_of_views);

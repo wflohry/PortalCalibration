@@ -205,7 +205,7 @@ void Calibrate::invertVideo(CvCapture*capture){
 
 
 //calibrates webcam with a chessboard
-void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h, int n_boards){
+void Calibrate::calibrateChessboard(shared_ptr<lens::ICamera> capture, int board_w, int board_h, int n_boards){
 	const int board_dt = 20; //wait 20 frames per chessboard view ( I changed to 10)
 
 	int board_n = board_w * board_h;
@@ -235,7 +235,7 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 	int step, frame = 0;
 
 	//Create images
-	IplImage *image = cvQueryFrame(capture);
+	IplImage *image = capture->getFrame();
 	//auto image = shared_ptr<IplImage>( cvQueryFrame(capture), [] (IplImage* ptr) {cvReleaseImage(&ptr); } );
 	
 	//IplImage *gray_image = cvCreateImage(cvGetSize(image),8,1);
@@ -296,7 +296,7 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 	
 		
 
-		image = cvQueryFrame(capture); //Get next image
+		image = capture->getFrame(); //Get next image
 
 	} //END COLLECTION WHILE LOOP
 
@@ -378,9 +378,8 @@ void Calibrate::calibrateChessboard(CvCapture* capture, int board_w, int board_h
 		if (c == 27)
 			break;
 		//what do i do???
-		image = cvQueryFrame(capture);
+		image = capture->getFrame();
 	}
-	cvReleaseImage(&image);
 
 	return;
 

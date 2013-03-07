@@ -23,6 +23,12 @@ find_package(Qt4 COMPONENTS QtCore REQUIRED)
 include(${QT_USE_FILE})
 set (LIBS ${LIBS} ${QT_LIBRARIES})
 
+## Lens Stuff
+add_subdirectory(../Libraries/Lens/src/lens ${PROJECT_BINARY_DIR}/Libraries/Lens)
+include_directories(../Libraries/Lens/src)
+include_directories(${LENS_INCLUDE_DIRS})
+set(LIBS ${LIBS} lens "${LENS_LIBRARIES}")
+
 ###
 # Build the project
 
@@ -39,7 +45,7 @@ add_executable(${PROJECT_NAME}
 	${SOURCES}
 	)
 
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} ${LIBS})
 
 install (TARGETS ${PROJECT_NAME}
 		RUNTIME DESTINATION bin/
