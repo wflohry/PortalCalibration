@@ -23,6 +23,6 @@ int main(int argc, char* argv[]){
 	assert(camera != nullptr);
 	
 	//cal->invertVideo(cap);
-	cal->calibrateChessboard(camera, 9, 6, 10);
+	cal->calibrateChessboard(camera, 9, 6, 5);
 	return 0;
 }
