@@ -17,13 +17,13 @@ void Calibrate::calibrateChessboard(shared_ptr<lens::ICamera> capture, int reque
   auto sucesses = grabViews(capture, requestedSamples, object_points, image_points, point_counts);
 	
   //Create matrices to hold intrinsics and distortion co-efficients
-  auto intrinsic_matrix =  shared_ptr<CvMat>( cvCreateMat(3, 3, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  auto distortion_coeffs = shared_ptr<CvMat>( cvCreateMat(5, 1, CV_32FC1) , [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  auto intrinsic_matrix = shared_ptr<CvMat>( cvCreateMat(3, 3, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  auto distortion_coeffs = shared_ptr<CvMat>( cvCreateMat(5, 1, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
 
   //Find intrinsics and distortion of the camera
-  camCalibrate( capture, intrinsic_matrix, distortion_coeffs, object_points, image_points, point_counts, sucesses);
+  camCalibrate( capture, distortion_coeffs, intrinsic_matrix, object_points, image_points, point_counts, sucesses);
   saveCalibrationData( distortion_coeffs, intrinsic_matrix );
-  unDistort( capture, intrinsic_matrix, distortion_coeffs);
+  unDistort( capture, distortion_coeffs, intrinsic_matrix);
 }
 
 int Calibrate::grabViews(shared_ptr<lens::ICamera> capture, int n_boards, shared_ptr<CvMat> object_points, shared_ptr<CvMat> image_points, shared_ptr<CvMat> point_counts)
@@ -124,7 +124,7 @@ int Calibrate::grabViews(shared_ptr<lens::ICamera> capture, int n_boards, shared
 	return successes;
 }
 
-void Calibrate::camCalibrate(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> intrinsic_matrix, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> object_points, shared_ptr<CvMat> image_points, shared_ptr<CvMat> point_counts, int successes)
+void Calibrate::camCalibrate(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix, shared_ptr<CvMat> object_points, shared_ptr<CvMat> image_points, shared_ptr<CvMat> point_counts, int successes)
 {	
   //ALLOCATE MATRICES ACCORDING TO HOW MANY CHESSBOARDS FOUND
   auto object_points2 = shared_ptr<CvMat>(cvCreateMat(successes*calibrationBoxCount, 3, CV_32FC1),	[] (CvMat* ptr) { cvReleaseMat(&ptr); } );	
@@ -168,6 +168,7 @@ void Calibrate::unDistort(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> d
 	//Build the undistort map that we  will use for all subsequent frames.
 	auto mapx = shared_ptr<IplImage>( cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1), [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
 	auto mapy = shared_ptr<IplImage>( cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1), [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
+
 	cvInitUndistortMap(intrinsic_matrix.get(), distortion_coeffs.get(), mapx.get(), mapy.get());
 
 	//Just run the camera to the screen, now showing the raw and the undistorted image
