@@ -12,17 +12,16 @@
 #include "calibrate.h"
 #include "cameraInput.h"
 
-Calibrate* cal;
-
 //new main method for video capture (FROM BOOK)
-int main(int argc, char* argv[]){
-	
+int main(int argc, char* argv[])
+{
+	// Setup the camera
 	auto camera = shared_ptr<lens::OpenCVCamera>( new lens::OpenCVCamera() );
 	camera->open();
-
 	assert(camera != nullptr);
 	
-	//cal->invertVideo(cap);
-	cal->calibrateChessboard(camera, 9, 6, 5);
+	// Setup the calibration engine
+	Calibrate calibrationEngine;
+	calibrationEngine.calibrateChessboard(camera, 9, 6, 5);
 	return 0;
 }
