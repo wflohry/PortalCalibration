@@ -14,14 +14,17 @@
 
 class Calibrate
 {
+  const CvSize calibrationBoxSize;
+  const int calibrationBoxCount;
 
 public:
-	void calibrateChessboard(shared_ptr<lens::ICamera> capture, int board_w, int board_h, int number_of_views);
+	Calibrate(const int boardWidth, const int boardHeight);
+	void calibrateChessboard(shared_ptr<lens::ICamera> capture, int requestedSamples);
 
 private:
-		// Returns the number of successful captures
-	int grabViews(shared_ptr<lens::ICamera> capture, int board_n, CvSize board_sz, int n_boards, shared_ptr<CvMat> object_points, shared_ptr<CvMat> image_points, shared_ptr<CvMat> point_counts, shared_ptr<CvPoint2D32f> corners );
-	void camCalibrate(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> intrinsic_matrix, shared_ptr<CvMat> distortion_coeffs, int board_n, shared_ptr<CvMat> object_points, shared_ptr<CvMat> image_points, shared_ptr<CvMat> point_counts, int sucesses);
+	// Returns the number of successful captures
+	int grabViews(shared_ptr<lens::ICamera> capture, int n_boards, shared_ptr<CvMat> object_points, shared_ptr<CvMat> image_points, shared_ptr<CvMat> point_counts );
+	void camCalibrate(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> intrinsic_matrix, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> object_points, shared_ptr<CvMat> image_points, shared_ptr<CvMat> point_counts, int sucesses);
 	void unDistort(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix);
 	void saveCalibrationData(shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix); 
 };
