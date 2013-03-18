@@ -161,6 +161,29 @@ void Calibrate::camCalibrate(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat
 		  intrinsic_matrix.get(), distortion_coeffs.get(), NULL, NULL, 0); //CV_CALIB_FIX_ASPECT_RATIO
 }
 
+void Calibrate::calibrateExtrinsic(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix)
+{
+  auto object_points = shared_ptr<CvMat>(cvCreateMat(calibrationBoxCount, 3, CV_32FC1),	  [] (CvMat* ptr) { cvReleaseMat(&ptr); } );	
+  auto image_points  = shared_ptr<CvMat>(cvCreateMat(calibrationBoxCount, 2, CV_32FC1) ,  [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  // TODO: We dont need point_counts for our call so we might want to make it an optional argument to grabViews
+  auto point_counts	 = shared_ptr<CvMat>( cvCreateMat(1 , 1, CV_32SC1),					  [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+
+  auto rotRodrigues = shared_ptr<CvMat>( cvCreateMat(4,1,CV_32FC2), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  auto rotation		= shared_ptr<CvMat>( cvCreateMat(3,3,CV_32FC2), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  auto translation	= shared_ptr<CvMat>( cvCreateMat(3,1,CV_32FC2), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+
+  // Only continue if grabViews returns 1 success
+  if(1 != grabViews(capture, 1, object_points, image_points, point_counts))
+	{ return; }
+
+  cvFindExtrinsicCameraParams2(object_points.get(), image_points.get(), intrinsic_matrix.get(), distortion_coeffs.get(), rotRodrigues.get(), translation.get());
+  cvRodrigues2( rotRodrigues.get(), rotation.get() );
+
+  //  TODO - This needs to be correctly serialized out
+  cvSave("Rotation.xml", rotation.get());
+  cvSave("Translation.xml", translation.get());
+}
+
 void Calibrate::unDistort(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix)
 {		
 	auto image = capture->getFrame();
@@ -189,7 +212,11 @@ void Calibrate::unDistort(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> d
 				c = cvWaitKey(250);
 			}
 		}
-		if (c == 27)
+		else if('e' == c)
+		{
+		  calibrateExtrinsic(capture, distortion_coeffs, intrinsic_matrix);
+		}
+		else if (c == 27)
 		{
 			break;
 		}
