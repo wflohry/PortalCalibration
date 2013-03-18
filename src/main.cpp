@@ -22,6 +22,6 @@ int main(int argc, char* argv[])
 	
 	// Setup the calibration engine
 	Calibrate calibrationEngine(9, 6);
-	calibrationEngine.calibrateChessboard(camera, 5);
+	calibrationEngine.calibrateChessboard(camera, 20);
 	return 0;
 }

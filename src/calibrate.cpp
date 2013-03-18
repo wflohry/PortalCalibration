@@ -168,9 +168,9 @@ void Calibrate::calibrateExtrinsic(shared_ptr<lens::ICamera> capture, shared_ptr
   // TODO: We dont need point_counts for our call so we might want to make it an optional argument to grabViews
   auto point_counts	 = shared_ptr<CvMat>( cvCreateMat(1 , 1, CV_32SC1),					  [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
 
-  auto rotRodrigues = shared_ptr<CvMat>( cvCreateMat(4,1,CV_32FC2), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  auto rotation		= shared_ptr<CvMat>( cvCreateMat(3,3,CV_32FC2), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  auto translation	= shared_ptr<CvMat>( cvCreateMat(3,1,CV_32FC2), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  auto rotRodrigues = shared_ptr<CvMat>( cvCreateMat(3,1,CV_32F), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  auto rotation		= shared_ptr<CvMat>( cvCreateMat(3,3,CV_32F), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  auto translation	= shared_ptr<CvMat>( cvCreateMat(3,1,CV_32F), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
 
   // Only continue if grabViews returns 1 success
   if(1 != grabViews(capture, 1, object_points, image_points, point_counts))
