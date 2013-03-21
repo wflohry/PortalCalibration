@@ -9,10 +9,8 @@
 #include <lens\ICamera.h>
 #include <lens\OpenCVCamera.h>
 
-#include "calibrate.h"
-#include "cameraInput.h"
+#include "Calibrate.h"
 
-//new main method for video capture (FROM BOOK)
 int main(int argc, char* argv[])
 {
 	// Setup the camera
@@ -21,7 +19,7 @@ int main(int argc, char* argv[])
 	assert(camera != nullptr);
 	
 	// Setup the calibration engine
-	Calibrate calibrationEngine(9, 6);
-	calibrationEngine.calibrateChessboard(camera, 20);
+	Calibrate calibrationEngine(4, 11);
+	calibrationEngine.calibrateChessboard(camera, 5);
 	return 0;
 }

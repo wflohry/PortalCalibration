@@ -1,187 +1,102 @@
-#include "calibrate.h"
+#include "Calibrate.h"
 
-Calibrate::Calibrate(const int horizontalBoxCount, const int verticalBoxCount) :
-  calibrationBoxSize( cvSize(horizontalBoxCount, verticalBoxCount) ),
-  calibrationBoxCount( horizontalBoxCount * verticalBoxCount )
+Calibrate::Calibrate(const int horizontalCount, const int verticalCount) :
+  m_boardSize( horizontalCount, verticalCount ),
+  m_boardMarkerCount( horizontalCount * verticalCount ),
+  m_markerDiameter( .5 )
 { }
 
 //calibrates webcam with a chessboard
 void Calibrate::calibrateChessboard(shared_ptr<lens::ICamera> capture, int requestedSamples)
 {
-  //Initialize the matrices for holding data
-  auto object_points  = shared_ptr<CvMat>( cvCreateMat(requestedSamples*calibrationBoxCount, 3, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  auto image_points	  = shared_ptr<CvMat>( cvCreateMat(requestedSamples*calibrationBoxCount, 2, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  auto point_counts	  = shared_ptr<CvMat>( cvCreateMat(requestedSamples,1,CV_32SC1),		   [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  // Grab views and place them in the matrixes
+  auto objectPoints = CalculateObjectPoints( ); 
+  auto imagePoints = GrabImagePoints(capture, requestedSamples);
 
-  //Grab views and place them in the matrixes
-  auto sucesses = grabViews(capture, requestedSamples, object_points, image_points, point_counts);
-	
-  //Create matrices to hold intrinsics and distortion co-efficients
-  auto intrinsic_matrix = shared_ptr<CvMat>( cvCreateMat(3, 3, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  auto distortion_coeffs = shared_ptr<CvMat>( cvCreateMat(5, 1, CV_32FC1), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  // Calibrate for intrinsics
+  auto calibrationData = CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth( ), capture->getHeight( ) ) );
+  
+  // TODO - Need to fetch the new ImagePoints used for extrinsic
+  imagePoints = GrabImagePoints(capture, 1); // Only use 1 since we are capturing for 1 view
+  CalibrateExtrinsic(objectPoints, imagePoints, calibrationData);
 
-  //Find intrinsics and distortion of the camera
-  camCalibrate( capture, distortion_coeffs, intrinsic_matrix, object_points, image_points, point_counts, sucesses);
-  saveCalibrationData( distortion_coeffs, intrinsic_matrix );
-  unDistort( capture, distortion_coeffs, intrinsic_matrix);
+  // TODO - Need to correctly serialize out the calibrationData
+  //saveCalibrationData( distortion_coeffs, intrinsic_matrix );
+  
+  // TODO - Need to show our undistorted stuff?
+  //unDistort( capture, distortion_coeffs, intrinsic_matrix);
 }
 
-int Calibrate::grabViews(shared_ptr<lens::ICamera> capture, int n_boards, shared_ptr<CvMat> object_points, shared_ptr<CvMat> image_points, shared_ptr<CvMat> point_counts)
+vector<vector<cv::Point2f>> Calibrate::GrabImagePoints( shared_ptr<lens::ICamera> capture, int poses2Capture )
 {
-	const int board_dt = 40; //wait this amount of frames per chessboard view
 	int successes = 0;
-	int corner_count = 0;
-	int step = 0;
-	int frame = 0;
+	bool found = false;
+	vector< vector< cv::Point2f > > imagePoints;
+	vector< cv::Point2f > pointBuffer;
 
-	//an array for the corner points
-	auto corners = shared_ptr<CvPoint2D32f> ( new CvPoint2D32f[ calibrationBoxCount ] );
-
-	cvNamedWindow("Calibration");
-	
-	//Create images
-	IplImage* image = capture->getFrame();
-	auto gray_image = shared_ptr<IplImage>( cvCreateImage(cvGetSize(image),8,1), [] (IplImage* ptr) {cvReleaseImage(&ptr); } );
-
-	//Prepare the text to place on the image
-	CvFont font;
-	cvInitFont(&font, CV_FONT_HERSHEY_TRIPLEX, 1.0f, 1.0f, 0.0f, 2.0); 
-	CvScalar textColor = cvScalar(0, 0, 0, 0);
-
-	//Loop continues until we have "n_boards" successful captures
-	//A successful capture means that all the corners on the board are found
-	while (successes < n_boards && image)
-	{
-	  int found = 0;
-	  //Skip ever "board_dt" frames to allow user to move chessboard
-	  if(frame++ % board_dt == 0)
-	  {
-		  //Find chessboard corners:
-		  found = cvFindChessboardCorners(image, calibrationBoxSize, corners.get(), &corner_count, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
+	// Create a display to give the user some feedback
+	Display display("Calibration");
 		
-		  if(found)
-		  {
-			  //Get subpixel accuracy on those corners
-			  cvCvtColor(image, gray_image.get(), CV_BGR2GRAY);
-			  cvFindCornerSubPix(gray_image.get(), corners.get(), corner_count, cvSize(11,11), cvSize(-1,-1), cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1));
+	// While we have boards to grab, grab-em
+	while ( successes < poses2Capture )
+	{
+	  // Let the user know how many more images we need and how to capture
+	  std::stringstream message;
+	  message << "Press <Enter> to capture pose \n";
+	  message << successes;
+	  message << "/";
+	  message << poses2Capture;
+	  display.OverlayText( message.str() );
 
-			  //Draw it
-			  cvDrawChessboardCorners(image, calibrationBoxSize, corners.get(), corner_count, found);
-			  cvShowImage("Calibration", image);
-
-			  //If we got a good board, add it to our data
-			  if (corner_count == calibrationBoxCount )
-			  {
-				step = successes * calibrationBoxCount;
-				for (int i = step, j=0; j<calibrationBoxCount; ++i,++j)
-				{
-					CV_MAT_ELEM(*image_points, float, i, 0) = corners.get()[j].x;
-					CV_MAT_ELEM(*image_points, float, i, 1) = corners.get()[j].y;
-					CV_MAT_ELEM(*object_points,float, i, 0) = j/calibrationBoxSize.width;
-					CV_MAT_ELEM(*object_points,float, i, 1) = j%calibrationBoxSize.width;
-					CV_MAT_ELEM(*object_points,float, i, 2) = 0.0f;
-				}
-				CV_MAT_ELEM(*point_counts, int, successes, 0) = calibrationBoxCount;
-				++successes;
-			  }
-		  }
-		  else
-		  {
-			cvShowImage("Calibration", image);
-		  }
-	  }//end skip board_dt between chessboard capture
-	  else
+	  while ( m_userWaitKey != cvWaitKey( 15 ) )
 	  {
-		cvDrawChessboardCorners(image, calibrationBoxSize, corners.get(), corner_count, found);
-		cvShowImage("Calibration", image);
+		// Just display to the user. They are setting up the calibration board
+		cv::Mat frame( capture->getFrame() );
+		cv::drawChessboardCorners( frame, m_boardSize, cv::Mat( pointBuffer ), found );
+		display.ShowImage( frame );
 	  }
 
-	  //Handle pause/unpause and ESC
-	  int c = cvWaitKey(15);
-	  if (c == 'p'){
-		c = 0;
-		while ( c != 'p' && c != 27)
-		{
-		  c = cvWaitKey(250);
-		}
-	  }
-	  if (c == 27)
+	  // User is ready, try and find the circles
+	  pointBuffer.clear();
+	  cv::Mat colorFrame( capture->getFrame( ) );
+	  cv::Mat gray;
+	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
+	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID );
+
+	  // Make sure we found it, and that we found all the points
+	  if(found && pointBuffer.size() == m_boardMarkerCount)
 	  {
-		  return successes;
-	  }			
-	  image = capture->getFrame(); //Get next image	
+		imagePoints.push_back(pointBuffer);
+		++successes;
+	  }
+	} // End collection while loop
 
-	  //Create string representation of successes and paint it on the image
-	  std::stringstream number;
-	  number << successes;
-	  std::stringstream total;
-	  total << n_boards;
-	  string numString = number.str() + "/" + total.str();
-	  cvPutText(image, numString.c_str(), cvPoint(50, 50), &font, textColor);
-	
-	} //END COLLECTION WHILE LOOP
-
-	return successes;
+	return imagePoints;
 }
 
-void Calibrate::camCalibrate(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix, shared_ptr<CvMat> object_points, shared_ptr<CvMat> image_points, shared_ptr<CvMat> point_counts, int successes)
-{	
-  //ALLOCATE MATRICES ACCORDING TO HOW MANY CHESSBOARDS FOUND
-  auto object_points2 = shared_ptr<CvMat>(cvCreateMat(successes*calibrationBoxCount, 3, CV_32FC1),	[] (CvMat* ptr) { cvReleaseMat(&ptr); } );	
-  auto image_points2  = shared_ptr<CvMat>(cvCreateMat(successes*calibrationBoxCount, 2, CV_32FC1) ,	[] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  auto point_counts2  = shared_ptr<CvMat>(cvCreateMat(successes, 1, CV_32SC1),						[] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-
-  //TRANSFER THE POINTS INTO THE CORRECT SIZE MATRICES
-  for (int i = 0; i < successes * calibrationBoxCount; ++i) 
-  {
-	  CV_MAT_ELEM( *image_points2, float, i, 0)	  = CV_MAT_ELEM( *image_points, float, i, 0);
-	  CV_MAT_ELEM( *image_points2, float, i, 1)	  = CV_MAT_ELEM( *image_points, float, i, 1);
-	  CV_MAT_ELEM( *object_points2, float, i, 0)  = CV_MAT_ELEM( *object_points, float, i, 0);
-	  CV_MAT_ELEM( *object_points2, float, i, 1)  = CV_MAT_ELEM( *object_points, float, i, 1);
-	  CV_MAT_ELEM( *object_points2, float, i, 2)  = CV_MAT_ELEM( *object_points, float, i, 2);
-  }
-
-  for(int i = 0; i < successes; ++i)
-  {
-	  CV_MAT_ELEM( *point_counts2, int, i, 0) = CV_MAT_ELEM(*point_counts, int, i, 0);
-  }
-
-  //At this point we have all the chessboard corners we need.
-  //Initialize the intrinsic matrix such that the two focal
-  //lengths hava a ratio of 1.0
-  //
-  CV_MAT_ELEM( *intrinsic_matrix, float, 0, 0 ) = 1.0f;
-  CV_MAT_ELEM( *intrinsic_matrix, float, 1, 1) = 1.0f;
-
-  auto image = capture->getFrame();
-
-  //CALIBRATE THE CAMERA!
-  cvCalibrateCamera2( object_points2.get(), image_points2.get(), 
-		  point_counts2.get(), cvGetSize(image), 
-		  intrinsic_matrix.get(), distortion_coeffs.get(), NULL, NULL, 0); //CV_CALIB_FIX_ASPECT_RATIO
-}
-
-void Calibrate::calibrateExtrinsic(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix)
+CalibrationData Calibrate::CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize)
 {
-  auto object_points = shared_ptr<CvMat>(cvCreateMat(calibrationBoxCount, 3, CV_32FC1),	  [] (CvMat* ptr) { cvReleaseMat(&ptr); } );	
-  auto image_points  = shared_ptr<CvMat>(cvCreateMat(calibrationBoxCount, 2, CV_32FC1) ,  [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  // TODO: We dont need point_counts for our call so we might want to make it an optional argument to grabViews
-  auto point_counts	 = shared_ptr<CvMat>( cvCreateMat(1 , 1, CV_32SC1),					  [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  // Start with the identity and it will get refined from there
+  // TODO : 5 vs 8?
+  cv::Mat distortionCoefficients = cv::Mat::zeros(8, 1, CV_64F);
+  cv::Mat intrinsicMatrix = cv::Mat::eye(3, 3, CV_64F);
+  vector<cv::Mat> rotationVectors;
+  vector<cv::Mat> translationVectors;
 
-  auto rotRodrigues = shared_ptr<CvMat>( cvCreateMat(3,1,CV_32F), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  auto rotation		= shared_ptr<CvMat>( cvCreateMat(3,3,CV_32F), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
-  auto translation	= shared_ptr<CvMat>( cvCreateMat(3,1,CV_32F), [] (CvMat* ptr) { cvReleaseMat(&ptr); } );
+  cv::calibrateCamera(objectPoints, imagePoints, viewSize, intrinsicMatrix, distortionCoefficients, rotationVectors, translationVectors, CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
 
-  // Only continue if grabViews returns 1 success
-  if(1 != grabViews(capture, 1, object_points, image_points, point_counts))
-	{ return; }
+  return CalibrationData( );
 
-  cvFindExtrinsicCameraParams2(object_points.get(), image_points.get(), intrinsic_matrix.get(), distortion_coeffs.get(), rotRodrigues.get(), translation.get());
-  cvRodrigues2( rotRodrigues.get(), rotation.get() );
+  // TODO - Need to return the intrinsicMatrix and the distortionCoefficients
+}
 
-  //  TODO - This needs to be correctly serialized out
-  cvSave("Rotation.xml", rotation.get());
-  cvSave("Translation.xml", translation.get());
+void Calibrate::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData& calibrationData)
+{
+  cv::Mat rotationVector;
+  cv::Mat translationVector;
+
+  cv::solvePnP(objectPoints, imagePoints, calibrationData.GetIntrinsic(), calibrationData.GetDistortion(), rotationVector, translationVector);
+  calibrationData.SetRotationVector(rotationVector);
 }
 
 void Calibrate::unDistort(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix)
@@ -191,32 +106,25 @@ void Calibrate::unDistort(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> d
 	//Build the undistort map that we  will use for all subsequent frames.
 	auto mapx = shared_ptr<IplImage>( cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1), [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
 	auto mapy = shared_ptr<IplImage>( cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1), [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
+	shared_ptr<CvMat> extrinsic_matrix = nullptr;
 
 	cvInitUndistortMap(intrinsic_matrix.get(), distortion_coeffs.get(), mapx.get(), mapy.get());
 
 	//Just run the camera to the screen, now showing the raw and the undistorted image
 	cvNamedWindow("Undistort");
 	cvNamedWindow("Calibration");
+
+	auto adjustedImage = shared_ptr<IplImage>( cvCloneImage(image) , [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
+
 	while (nullptr != image)
 	{
-		auto t =  shared_ptr<IplImage>( cvCloneImage(image) , [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
 		cvShowImage("Calibration", image); //Show raw image
-		cvRemap(t.get(), image, mapx.get(), mapy.get()); //Undistort image
-		cvShowImage("Undistort", image); //Show corrected image
-
-		//Handle pause/unpause and ESC
+		cvRemap(image, adjustedImage.get(), mapx.get(), mapy.get()); //Undistort image
+		cvShowImage("Undistort", adjustedImage.get()); //Show corrected image
+		
+		//Handle ESC
 		int c = cvWaitKey(15);
-		if (c == 'p'){
-			c = 0;
-			while ( c != 'p' && c != 27){
-				c = cvWaitKey(250);
-			}
-		}
-		else if('e' == c)
-		{
-		  calibrateExtrinsic(capture, distortion_coeffs, intrinsic_matrix);
-		}
-		else if (c == 27)
+		if (c == 27)
 		{
 			break;
 		}
@@ -230,4 +138,21 @@ void Calibrate::saveCalibrationData(shared_ptr<CvMat> distortion_coeffs, shared_
 	// TODO - Currently save to xml, soon this should be a .qs file
 	cvSave("Intrinsics.xml", intrinsic_matrix.get());
 	cvSave("Distortion.xml", distortion_coeffs.get());
+}
+
+vector<cv::Point3f> Calibrate::CalculateObjectPoints()
+{
+  vector<cv::Point3f> objectPoints;
+
+  for( int row = 0; row < m_boardSize.height; ++row )
+  {
+	for( int col = 0; col < m_boardSize.width; ++col )
+	{
+	  objectPoints.push_back( cv::Point3f( float(2.0 * col + row % 2) * m_markerDiameter,
+										   float(row * m_markerDiameter),
+										   0.0f));
+	}
+  }
+
+  return objectPoints;
 }
