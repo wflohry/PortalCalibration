@@ -1,13 +1,13 @@
-#include "Calibrate.h"
+#include "CalibrationEngine.h"
 
-Calibrate::Calibrate(const int horizontalCount, const int verticalCount) :
+CalibrationEngine::CalibrationEngine(const int horizontalCount, const int verticalCount) :
   m_boardSize( horizontalCount, verticalCount ),
   m_boardMarkerCount( horizontalCount * verticalCount ),
   m_markerDiameter( .5 )
 { }
 
 //calibrates webcam with a chessboard
-void Calibrate::calibrateChessboard(shared_ptr<lens::ICamera> capture, int requestedSamples)
+void CalibrationEngine::calibrateChessboard(shared_ptr<lens::ICamera> capture, int requestedSamples)
 {
   // Grab views and place them in the matrixes
   auto objectPoints = CalculateObjectPoints( ); 
@@ -16,18 +16,12 @@ void Calibrate::calibrateChessboard(shared_ptr<lens::ICamera> capture, int reque
   // Calibrate for intrinsics
   auto calibrationData = CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth( ), capture->getHeight( ) ) );
   
-  // TODO - Need to fetch the new ImagePoints used for extrinsic
+  // Calibrate for extrinsics
   imagePoints = GrabImagePoints(capture, 1); // Only use 1 since we are capturing for 1 view
   CalibrateExtrinsic(objectPoints, imagePoints, calibrationData);
-
-  // TODO - Need to correctly serialize out the calibrationData
-  //saveCalibrationData( distortion_coeffs, intrinsic_matrix );
-  
-  // TODO - Need to show our undistorted stuff?
-  //unDistort( capture, distortion_coeffs, intrinsic_matrix);
 }
 
-vector<vector<cv::Point2f>> Calibrate::GrabImagePoints( shared_ptr<lens::ICamera> capture, int poses2Capture )
+vector<vector<cv::Point2f>> CalibrationEngine::GrabImagePoints( shared_ptr<lens::ICamera> capture, int poses2Capture )
 {
 	int successes = 0;
 	bool found = false;
@@ -74,7 +68,7 @@ vector<vector<cv::Point2f>> Calibrate::GrabImagePoints( shared_ptr<lens::ICamera
 	return imagePoints;
 }
 
-CalibrationData Calibrate::CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize)
+CalibrationData CalibrationEngine::CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize)
 {
   // Start with the identity and it will get refined from there
   // TODO : 5 vs 8?
@@ -90,7 +84,7 @@ CalibrationData Calibrate::CalibrateView(vector<cv::Point3f> objectPoints, vecto
   // TODO - Need to return the intrinsicMatrix and the distortionCoefficients
 }
 
-void Calibrate::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData& calibrationData)
+void CalibrationEngine::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData& calibrationData)
 {
   cv::Mat rotationVector;
   cv::Mat translationVector;
@@ -99,48 +93,7 @@ void Calibrate::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vect
   calibrationData.SetRotationVector(rotationVector);
 }
 
-void Calibrate::unDistort(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix)
-{		
-	auto image = capture->getFrame();
-
-	//Build the undistort map that we  will use for all subsequent frames.
-	auto mapx = shared_ptr<IplImage>( cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1), [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
-	auto mapy = shared_ptr<IplImage>( cvCreateImage( cvGetSize(image), IPL_DEPTH_32F, 1), [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
-	shared_ptr<CvMat> extrinsic_matrix = nullptr;
-
-	cvInitUndistortMap(intrinsic_matrix.get(), distortion_coeffs.get(), mapx.get(), mapy.get());
-
-	//Just run the camera to the screen, now showing the raw and the undistorted image
-	cvNamedWindow("Undistort");
-	cvNamedWindow("Calibration");
-
-	auto adjustedImage = shared_ptr<IplImage>( cvCloneImage(image) , [] (IplImage* ptr) { cvReleaseImage(&ptr); } );
-
-	while (nullptr != image)
-	{
-		cvShowImage("Calibration", image); //Show raw image
-		cvRemap(image, adjustedImage.get(), mapx.get(), mapy.get()); //Undistort image
-		cvShowImage("Undistort", adjustedImage.get()); //Show corrected image
-		
-		//Handle ESC
-		int c = cvWaitKey(15);
-		if (c == 27)
-		{
-			break;
-		}
-
-		image = capture->getFrame();
-	}
-}
-
-void Calibrate::saveCalibrationData(shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix)
-{
-	// TODO - Currently save to xml, soon this should be a .qs file
-	cvSave("Intrinsics.xml", intrinsic_matrix.get());
-	cvSave("Distortion.xml", distortion_coeffs.get());
-}
-
-vector<cv::Point3f> Calibrate::CalculateObjectPoints()
+vector<cv::Point3f> CalibrationEngine::CalculateObjectPoints()
 {
   vector<cv::Point3f> objectPoints;
 

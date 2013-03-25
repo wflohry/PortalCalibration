@@ -1,5 +1,5 @@
-#ifndef _H_PORTAL_CALIBRATION_CALIBRATE_
-#define _H_PORTAL_CALIBRATION_CALIBRATE_
+#ifndef _H_PORTAL_CALIBRATION_CALIBRATION_ENGINE_
+#define _H_PORTAL_CALIBRATION_CALIBRATION_ENGINE_
 
 // Standard C++ includes
 #include <memory>
@@ -20,7 +20,7 @@
 
 using namespace std;
 
-class Calibrate
+class CalibrationEngine
 {
 private:
   static const int m_userWaitKey = 13;
@@ -30,7 +30,7 @@ private:
   const float m_markerDiameter;
 
 public:
-	Calibrate(const int boardWidth, const int boardHeight);
+	CalibrationEngine(const int boardWidth, const int boardHeight);
 	void calibrateChessboard(shared_ptr<lens::ICamera> capture, int requestedSamples);
 
 private:
@@ -47,4 +47,4 @@ private:
 	void saveCalibrationData(shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix); 
 };
 
-#endif // _H_PORTAL_CALIBRATION_CALIBRATE_
+#endif // _H_PORTAL_CALIBRATION_CALIBRATION_ENGINE_

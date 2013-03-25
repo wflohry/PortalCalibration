@@ -34,8 +34,8 @@ set(LIBS ${LIBS} lens "${LENS_LIBRARIES}")
 
 set(SOURCES
     Main.cpp
-    Calibrate.h
-	Calibrate.cpp
+    CalibrationEngine.h
+    CalibrationEngine.cpp
 	CalibrationData.h
 	CalibrationData.cpp
     Display.h
