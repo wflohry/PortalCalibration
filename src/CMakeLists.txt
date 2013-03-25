@@ -40,6 +40,11 @@ set(SOURCES
 	CalibrationData.cpp
     Display.h
     Display.cpp
+
+    NFringePhaseWrapper.h
+    NFringePhaseWrapper.cpp
+    TwoWavelengthPhaseUnwrapper.h
+    TwoWavelengthPhaseUnwrapper.cpp
 	)
 	
 add_executable(${PROJECT_NAME}
