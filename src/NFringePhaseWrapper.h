@@ -1,10 +1,16 @@
 #ifndef _PORTAL_CALIBRATION_N_FRINGE_PHASE_WRAPPER_H_
 #define _PORTAL_CALIBRATION_N_FRINGE_PHASE_WRAPPER_H_
 
+#include <vector>
+
+#include <cv.h>
+
+using namespace std;
+
 class PhaseWrapper
 {
     public:
-        cv::Mat WrapPhase(vector<cv::Mat> fringeImages) = 0;
+				virtual cv::Mat WrapPhase(vector<cv::Mat> fringeImages) = 0;
 };
 
 class NFringePhaseWrapper
