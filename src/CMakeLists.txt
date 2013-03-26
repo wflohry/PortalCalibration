@@ -33,11 +33,18 @@ set(LIBS ${LIBS} lens "${LENS_LIBRARIES}")
 # Build the project
 
 set(SOURCES
-    main.cpp
-	calibrate.cpp
-	calibrate.h
-	cameraInput.h
-	cameraInput.cpp
+    Main.cpp
+    CalibrationEngine.h
+    CalibrationEngine.cpp
+	CalibrationData.h
+	CalibrationData.cpp
+    Display.h
+    Display.cpp
+
+    NFringePhaseWrapper.h
+    NFringePhaseWrapper.cpp
+    TwoWavelengthPhaseUnwrapper.h
+    TwoWavelengthPhaseUnwrapper.cpp
 	)
 	
 add_executable(${PROJECT_NAME}
