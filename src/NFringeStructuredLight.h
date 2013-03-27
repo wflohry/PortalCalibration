@@ -12,19 +12,27 @@
 
 using namespace std;
 
-class PhaseWrapper
+class IStructuredLight
 {
 public:
+  enum FringeDirection
+  {
+	Horizontal,
+	Vertical
+  };
+
+  virtual vector<cv::Mat> GenerateFringe( const cv::Size fringeSize, const int pitch, FringeDirection direction ) = 0;
   virtual cv::Mat WrapPhase(vector<cv::Mat> fringeImages) = 0;
 };
 
-class NFringePhaseWrapper
+class NFringeStructuredLight : public IStructuredLight
 {
 private:
   const unsigned int m_numberOfFringes;
 
 public:
-  NFringePhaseWrapper(unsigned int numberOfFringes);
+  NFringeStructuredLight(unsigned int numberOfFringes);
+  vector<cv::Mat> GenerateFringe( const cv::Size fringeSize, const int pitch, FringeDirection direction );
   cv::Mat WrapPhase(vector<cv::Mat> fringeImages);
 };
 

@@ -17,6 +17,8 @@
 #include <lens\ICamera.h>
 #include "CalibrationData.h"
 #include "Display.h"
+#include "NFringePhaseWrapper.h"
+#include "TwoWavelengthPhaseUnwrapper.h"
 
 using namespace std;
 
@@ -31,20 +33,22 @@ private:
 
 public:
 	CalibrationEngine(const int boardWidth, const int boardHeight);
-	void calibrateChessboard(shared_ptr<lens::ICamera> capture, int requestedSamples);
+	void CalibrateCamera(shared_ptr<lens::ICamera> capture, int requestedSamples);
+
+	// TODO - This will also have to include an IProjector
+	void CalibrateProjector(shared_ptr<lens::ICamera> capture, int requestedSamples);
 
 private:
 	// Used for aquiring the data for calibration
-	vector<vector<cv::Point2f>> GrabImagePoints(shared_ptr<lens::ICamera> capture, int poses2Capture );
+	vector<vector<cv::Point2f>> GrabCameraImagePoints(shared_ptr<lens::ICamera> capture, int poses2Capture );
+	// TODO - This will also have to include an IProjector
+	vector<vector<cv::Point2f>> GrabProjectorImagePoints(shared_ptr<lens::ICamera> capture, int poses2Capture );
+	cv::Mat ProjectAndCapturePhase(shared_ptr<lens::ICamera> capture, vector<cv::Mat> fringeImages);
 	vector<cv::Point3f> CalculateObjectPoints();
 
 	// Used for the actual calibration
 	CalibrationData CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize);
 	void CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData& calibrationData);
-	
-	// TODO - Misc (Need to fix)
-	void unDistort(shared_ptr<lens::ICamera> capture, shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix);
-	void saveCalibrationData(shared_ptr<CvMat> distortion_coeffs, shared_ptr<CvMat> intrinsic_matrix); 
 };
 
 #endif // _H_PORTAL_CALIBRATION_CALIBRATION_ENGINE_

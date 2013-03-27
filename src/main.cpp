@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 	
 	// Setup the calibration engine
 	CalibrationEngine calibrationEngine(4, 11);
-	calibrationEngine.calibrateChessboard(camera, 5);
+	calibrationEngine.CalibrateCamera(camera, 5);
 	return 0;
 }
 
