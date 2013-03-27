@@ -1,4 +1,4 @@
-#include "NFringePhaseWrapper.h"
+#include "NFringeStructuredLight.h"
 
 NFringeStructuredLight::NFringeStructuredLight(unsigned int numberOfFringes) :
   m_numberOfFringes(numberOfFringes)
@@ -56,7 +56,6 @@ cv::Mat NFringeStructuredLight::WrapPhase(vector<cv::Mat> fringeImages)
 	  float cosine = 0;
 	  for(int fringe = 0; fringe < m_numberOfFringes; ++fringe)
 	  {
-		// TODO - Make sure these are grayscale
 		sine += fringeImages[fringe].at<uchar>(row, col) * sin(2.0 * M_PI * float(fringe) / float(m_numberOfFringes));
 		cosine += fringeImages[fringe].at<uchar>(row, col) * cos(2.0 * M_PI * float(fringe) / float(m_numberOfFringes));
 	  }

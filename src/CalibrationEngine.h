@@ -17,7 +17,7 @@
 #include <lens\ICamera.h>
 #include "CalibrationData.h"
 #include "Display.h"
-#include "NFringePhaseWrapper.h"
+#include "NFringeStructuredLight.h"
 #include "TwoWavelengthPhaseUnwrapper.h"
 
 using namespace std;
