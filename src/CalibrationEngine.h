@@ -43,7 +43,7 @@ private:
 	vector<vector<cv::Point2f>> GrabCameraImagePoints(shared_ptr<lens::ICamera> capture, int poses2Capture );
 	// TODO - This will also have to include an IProjector
 	vector<vector<cv::Point2f>> GrabProjectorImagePoints(shared_ptr<lens::ICamera> capture, int poses2Capture );
-	cv::Mat ProjectAndCapturePhase(shared_ptr<lens::ICamera> capture, vector<cv::Mat> fringeImages);
+	cv::Mat ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, vector<cv::Mat> fringeImages);
 	vector<cv::Point3f> CalculateObjectPoints();
 
 	// Used for the actual calibration

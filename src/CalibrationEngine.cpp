@@ -135,9 +135,9 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 		auto horizontalUnwrappedPhase = phaseUnwrapper.UnwrapPhase(wrappedPhase);
 		
 		// Vertical set ----------------------------
-		auto smallWavelength = fringeGenerator.GenerateFringe(gray.size(), 70, IStructuredLight::Vertical);
+		smallWavelength = fringeGenerator.GenerateFringe(gray.size(), 70, IStructuredLight::Vertical);
 		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, smallWavelength ) );
-		auto largerWavelength = fringeGenerator.GenerateFringe(gray.size(), 75, IStructuredLight::Vertical);
+		largerWavelength = fringeGenerator.GenerateFringe(gray.size(), 75, IStructuredLight::Vertical);
 		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, largerWavelength ) );
 		auto verticalUnwrappedPhase = phaseUnwrapper.UnwrapPhase(wrappedPhase);
 
@@ -152,7 +152,7 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	return imagePoints;
 }
 
-cv::Mat ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, vector<cv::Mat> fringeImages)
+cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, vector<cv::Mat> fringeImages)
 {
   vector<cv::Mat> capturedFringes;
   cv::Mat gray;
@@ -165,7 +165,7 @@ cv::Mat ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, vector<
 	capturedFringes.push_back( gray );
   }
 
-  NFringePhaseWrapper phaseWrapper(fringeImages.size()); 
+  NFringeStructuredLight phaseWrapper(fringeImages.size()); 
   return phaseWrapper.WrapPhase(capturedFringes);
 }
 

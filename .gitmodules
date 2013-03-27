@@ -1,3 +1,6 @@
 [submodule "Libraries/Lens"]
 	path = Libraries/Lens
 	url = https://github.com/karpinsn/Lens.git
+[submodule "Libraries/GTest"]
+	path = Libraries/GTest
+	url = https://github.com/karpinsn/googletest.git
