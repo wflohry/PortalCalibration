@@ -40,7 +40,9 @@ set(SOURCES
 	CalibrationData.cpp
     Display.h
     Display.cpp
-
+	Utils.h
+	Utils.cpp
+	
     NFringePhaseWrapper.h
     NFringePhaseWrapper.cpp
     TwoWavelengthPhaseUnwrapper.h
