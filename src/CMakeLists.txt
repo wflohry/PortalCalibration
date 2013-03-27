@@ -43,8 +43,8 @@ set(SOURCES
 	Utils.h
 	Utils.cpp
 	
-    NFringePhaseWrapper.h
-    NFringePhaseWrapper.cpp
+    NFringeStructuredLight.h
+    NFringeStructuredLight.cpp
     TwoWavelengthPhaseUnwrapper.h
     TwoWavelengthPhaseUnwrapper.cpp
 	)
