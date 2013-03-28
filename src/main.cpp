@@ -9,6 +9,9 @@
 #include <lens\ICamera.h>
 #include <lens\OpenCVCamera.h>
 
+#include <reelblink\IProjector.h>
+#include <reelblink\LightCommanderProjector.h>
+
 #include "CalibrationEngine.h"
 
 int main(int argc, char* argv[])
@@ -18,6 +21,8 @@ int main(int argc, char* argv[])
   camera->open();
   assert(camera != nullptr);
 	
+  auto projector = shared_ptr<LightCommanderProjector>( new LightCommanderProjector( ) );
+
   // Setup the calibration engine
   CalibrationEngine calibrationEngine(4, 11);
   calibrationEngine.CalibrateCamera(camera, 5);
