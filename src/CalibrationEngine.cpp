@@ -20,17 +20,17 @@ void CalibrationEngine::CalibrateCamera(shared_ptr<lens::ICamera> capture, int r
   CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
 }
 
-void CalibrationEngine::CalibrateProjector(shared_ptr<lens::ICamera> capture, int requestedSamples)
+void CalibrationEngine::CalibrateProjector(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples)
 {
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
-  auto imagePoints = GrabProjectorImagePoints( capture, requestedSamples );
+  auto imagePoints = GrabProjectorImagePoints( capture, projector, requestedSamples );
 
   // Calibrate for projector intrinsics
   auto calibrationData = CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth(), capture->getHeight( ) ) );
 
   // Calibrate for extrinsics
-  imagePoints = GrabProjectorImagePoints( capture, 1 ); // Only using 1 since we are capturing for 1 view
+  imagePoints = GrabProjectorImagePoints( capture, projector, 1 ); // Only using 1 since we are capturing for 1 view
   CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
 }
 
@@ -81,12 +81,13 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( shared_ptr
 	return imagePoints;
 }
 
-vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_ptr<lens::ICamera> capture, int poses2Capture )
+vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int poses2Capture )
 {
   	int successes = 0;
 	bool found = false;
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
+	cv::Size projectorSize( projector->getWidth( ), projector->getHeight( ) );
 
 	// Create a display to give the user some feedback
 	Display display("Calibration");
@@ -113,7 +114,11 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	  // User is ready, try and find the circles
 	  pointBuffer.clear();
 
-	  // TODO - make the projector project a white image
+	  // Project a white image so that it is easier to see the calibration board
+	  cv::Mat whiteFrame( projectorSize, CV_8UC3, cv::Scalar(255,255,255));
+	  projector->projectImage(whiteFrame);
+
+	  // Look for the calibration board
 	  cv::Mat colorFrame( capture->getFrame( ) );
 	  cv::Mat gray;
 	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
@@ -128,17 +133,17 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 		TwoWavelengthPhaseUnwrapper phaseUnwrapper;
 
 		// Horizontal set --------------------------
-		auto smallWavelength = fringeGenerator.GenerateFringe(gray.size(), 70, IStructuredLight::Horizontal);
-		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, smallWavelength ) );
-		auto largerWavelength = fringeGenerator.GenerateFringe(gray.size(), 75, IStructuredLight::Horizontal);
-		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, largerWavelength ) );
+		auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, IStructuredLight::Horizontal);
+		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength ) );
+		auto largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, IStructuredLight::Horizontal);
+		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
 		auto horizontalUnwrappedPhase = phaseUnwrapper.UnwrapPhase(wrappedPhase);
 		
 		// Vertical set ----------------------------
-		smallWavelength = fringeGenerator.GenerateFringe(gray.size(), 70, IStructuredLight::Vertical);
-		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, smallWavelength ) );
-		largerWavelength = fringeGenerator.GenerateFringe(gray.size(), 75, IStructuredLight::Vertical);
-		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, largerWavelength ) );
+		smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, IStructuredLight::Vertical);
+		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength ) );
+		largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, IStructuredLight::Vertical);
+		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
 		auto verticalUnwrappedPhase = phaseUnwrapper.UnwrapPhase(wrappedPhase);
 
 		vector< cv::Point2f > projectorPointBuffer;
@@ -152,14 +157,14 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	return imagePoints;
 }
 
-cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, vector<cv::Mat> fringeImages)
+cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, vector<cv::Mat> fringeImages)
 {
   vector<cv::Mat> capturedFringes;
   cv::Mat gray;
 
   for(int patternNumber = 0; patternNumber < fringeImages.size(); ++patternNumber)
   {
-	// projector.ProjectImage(fringeImages[i]);
+	projector->projectImage(fringeImages[patternNumber]);
 	cv::Mat colorFringe( capture->getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );
 	capturedFringes.push_back( gray );
