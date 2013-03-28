@@ -27,6 +27,11 @@ include_directories(Libraries/Lens/src)
 include_directories(${LENS_INCLUDE_DIRS})
 set(LIBS ${LIBS} lens "${LENS_LIBRARIES}")
 
+## ReelBlink Stuff
+add_subdirectory(Libraries/ReelBlink/src/ReelBlink ${PROJECT_BINARY_DIR}/Libraries/ReelBlink)
+include_directories(Libraries/ReelBlink/src)
+set(LIBS ${LIBS} ReelBlink "${REELBLINK_LIBRARIES}")
+
 ###
 # Add the src directory so that we can make the project
 add_subdirectory(src)
