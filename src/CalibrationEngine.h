@@ -1,9 +1,12 @@
 #ifndef _H_PORTAL_CALIBRATION_CALIBRATION_ENGINE_
 #define _H_PORTAL_CALIBRATION_CALIBRATION_ENGINE_
 
+#define _USE_MATH_DEFINES
+
 // Standard C++ includes
 #include <memory>
 #include <iostream>
+#include <math.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,12 +45,16 @@ private:
 	// Used for aquiring the data for calibration
 	vector<vector<cv::Point2f>> GrabCameraImagePoints(shared_ptr<lens::ICamera> capture, int poses2Capture );
 	vector<vector<cv::Point2f>> GrabProjectorImagePoints(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int poses2Capture );
+	
+	cv::Mat ProjectAndCaptureUnwrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, IStructuredLight::FringeDirection direction);
 	cv::Mat ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, vector<cv::Mat> fringeImages);
 	vector<cv::Point3f> CalculateObjectPoints();
 
 	// Used for the actual calibration
 	CalibrationData CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize);
 	void CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData& calibrationData);
+
+	float InterpolateProjectorPosition(float phi, float phi0, int pitch);
 };
 
 #endif // _H_PORTAL_CALIBRATION_CALIBRATION_ENGINE_

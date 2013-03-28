@@ -4,7 +4,7 @@ CalibrationData::CalibrationData( void )
 {
   // Default matricies and coefficients that wont affect the image
   m_intrinsicMatrix			= cv::Mat::eye(3, 3, CV_64F);
-  m_distortionCoefficients	= cv::Mat::zeros(8, 1, CV_64F); // TODO - Should this be 8 or 5?
+  m_distortionCoefficients	= cv::Mat::zeros(5, 1, CV_64F);
   m_rotationMatrix			= cv::Mat::eye(3, 3, CV_64F);
 }
 

@@ -127,27 +127,19 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	  // Make sure we found it, and that we found all the points
 	  if(found && pointBuffer.size() == m_boardMarkerCount)
 	  {
-		// We found all the markers in the camera view. Now we need to image with the projector
-		vector<cv::Mat> wrappedPhase;
-		NFringeStructuredLight fringeGenerator(5);
-		TwoWavelengthPhaseUnwrapper phaseUnwrapper;
-
-		// Horizontal set --------------------------
-		auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, IStructuredLight::Horizontal);
-		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength ) );
-		auto largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, IStructuredLight::Horizontal);
-		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
-		auto horizontalUnwrappedPhase = phaseUnwrapper.UnwrapPhase(wrappedPhase);
-		
-		// Vertical set ----------------------------
-		smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, IStructuredLight::Vertical);
-		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength ) );
-		largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, IStructuredLight::Vertical);
-		wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
-		auto verticalUnwrappedPhase = phaseUnwrapper.UnwrapPhase(wrappedPhase);
+		// We found all the markers in the camera view. Now we need to image with the projector		
+		auto horizontalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, projector, IStructuredLight::Horizontal);
+		auto verticalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, projector, IStructuredLight::Vertical);
 
 		vector< cv::Point2f > projectorPointBuffer;
-		// TODO - interpolate projector pixels from phase
+		for(int coord = 0; coord < pointBuffer.size( ); ++coord)
+		{
+		  // Use the horizontal unwrapped phase to get the x and vertical for y
+		  // TODO - -1.8 is not correct
+		  projectorPointBuffer.push_back(cv::Point2f(
+			InterpolateProjectorPosition(horizontalUnwrappedPhase.at<float>(pointBuffer[coord]), -1.8f, 70),
+			InterpolateProjectorPosition(verticalUnwrappedPhase.at<float>(pointBuffer[coord]), -1.8f, 70)));
+		}
 
 		imagePoints.push_back(projectorPointBuffer);
 		++successes;
@@ -155,6 +147,22 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	} // End collection while loop
 
 	return imagePoints;
+}
+
+cv::Mat CalibrationEngine::ProjectAndCaptureUnwrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, IStructuredLight::FringeDirection direction)
+{
+  // TODO - How do we know that we want to use 5? (Settings File?)
+  NFringeStructuredLight	  fringeGenerator(5);
+  TwoWavelengthPhaseUnwrapper phaseUnwrapper;
+  vector<cv::Mat>			  wrappedPhase;
+  cv::Size					  projectorSize( projector->getWidth( ), projector->getHeight( ) );
+
+  // TODO - How do we know that we want to use 70 and 75? (Settings File?)
+  auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, IStructuredLight::Horizontal);
+  wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength ) );
+  auto largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, IStructuredLight::Horizontal);
+  wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
+  return phaseUnwrapper.UnwrapPhase(wrappedPhase);
 }
 
 cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, vector<cv::Mat> fringeImages)
@@ -219,4 +227,9 @@ vector<cv::Point3f> CalibrationEngine::CalculateObjectPoints()
   }
 
   return objectPoints;
+}
+
+float CalibrationEngine::InterpolateProjectorPosition(float phi, float phi0, int pitch)
+{
+  return 1.0 + ( ( phi - phi0) / ( ( 2.0 * M_PI ) / float( pitch ) ) );
 }
