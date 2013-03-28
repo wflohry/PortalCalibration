@@ -15,11 +15,13 @@ vector<cv::Mat> NFringeStructuredLight::GenerateFringe( const cv::Size fringeSiz
 
   for(int pattern = 0; pattern < m_numberOfFringes; ++pattern)
   {
+	float phaseShift = ( 2.0 * M_PI * float(pattern) ) / float(m_numberOfFringes);
 	for(int row = 0; row < fringeImage.rows; ++row)
 	{
 	  for(int col = 0; col < fringeImage.cols; ++col)
 	  {
-		fringeImage.at<float>(row, col) = (1.0 - cos((2.0 * M_PI) * (col / pitch) + ((2.0 * M_PI * pattern) /m_numberOfFringes))) * .5;
+		float waveNum = (1.0 - cos((2.0 * M_PI) * (float(col) / float(pitch)) + phaseShift ) ) * .5;
+		fringeImage.at<float>(row, col) = waveNum;
 	  }
 	}
 
@@ -27,12 +29,12 @@ vector<cv::Mat> NFringeStructuredLight::GenerateFringe( const cv::Size fringeSiz
 	if(direction == IStructuredLight::Vertical)
 	{ 
 	  cv::transpose( fringeImage, fringeImage ); 
-	  fringeImages.push_back( fringeImage );
+	  fringeImages.push_back( fringeImage.clone( ) );
 	  cv::transpose( fringeImage, fringeImage ); 
 	}
 	else
 	{
-	  fringeImages.push_back( fringeImage );
+	  fringeImages.push_back( fringeImage.clone( ) );
 	}
   }
 

@@ -2,7 +2,12 @@
 
 #include "gtest/gtest.h"
 
-TEST(sample_test_case, sample_test)
+//#include "NFringeStructuredLight.h"
+
+TEST(NFringeStructuredLight, GenerateFringe_CorrectN)
 {
-    EXPECT_EQ(1, 1);
+  //NFringeStructuredLight structuredLight(5);
+  //auto fringe = structuredLight.GenerateFringe(cv::Size(128,128), 70, IStructuredLight::Horizontal);
+
+  EXPECT_EQ(1, 1);
 }
