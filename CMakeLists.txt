@@ -1,15 +1,14 @@
 #
 # 2010 Nik Karpinsky
 #
+###
+# Set CMake Stuff
 cmake_minimum_required(VERSION 2.6)
-
-# Set package properties
-project(PortalCalibration)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_SOURCE_DIR}/CMakeModules")
 
 ###
-# CMake Modules Paths
-
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_SOURCE_DIR}/CMakeModules")
+# Set project properties
+project(PortalCalibration)
 
 ###
 # Perform build configuration of dependencies
@@ -28,6 +27,12 @@ include_directories(Libraries/Lens/src)
 include_directories(${LENS_INCLUDE_DIRS})
 set(LIBS ${LIBS} lens "${LENS_LIBRARIES}")
 
+###
+# Add the src directory so that we can make the project
+add_subdirectory(src)
+
+###
+# Unit testing stuff
 option(PortalCalibration_UNIT_TESTS "Generate PortalCalibration unit tests" OFF)
 if(PortalCalibration_UNIT_TESTS)
     add_subdirectory(Libraries/GTest)
@@ -35,6 +40,3 @@ if(PortalCalibration_UNIT_TESTS)
     add_subdirectory(test)
 endif()
 
-###
-# Add the src directory so that we can make the project
-add_subdirectory(src)

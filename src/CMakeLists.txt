@@ -4,31 +4,26 @@
 
 ###
 # Add our sources
-
-set(
-    HEADERS
-    CalibrationEngine.h
-    CalibrationData.h
-    Display.h
-    Utils.h
-    NFringeStructuredLight.h
-    TwoWavelengthPhaseUnwrapper.h
-    )
-
-set(SOURCES
+set(PROJECT_SOURCES
     Main.cpp
     CalibrationEngine.cpp
+    CalibrationEngine.h
 	CalibrationData.cpp
+    CalibrationData.h
     Display.cpp
+    Display.h
 	Utils.cpp
+    Utils.h
 	
     NFringeStructuredLight.cpp
+    NFringestructuredLight.h
     TwoWavelengthPhaseUnwrapper.cpp
+    TwoWavelengthPhaseUnwrapper.h
 	)
-	
+
 add_executable(${PROJECT_NAME}
 	MACOSX_BUNDLE
-	${SOURCES}
+    ${PROJECT_SOURCES}
 	)
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
