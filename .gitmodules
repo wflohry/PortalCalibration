@@ -4,3 +4,6 @@
 [submodule "Libraries/GTest"]
 	path = Libraries/GTest
 	url = https://github.com/karpinsn/googletest.git
+[submodule "Libraries/ReelBlink"]
+	path = Libraries/ReelBlink
+	url = https://github.com/karpinsn/ReelBlink.git
