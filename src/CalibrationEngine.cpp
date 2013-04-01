@@ -87,7 +87,7 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	bool found = false;
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
-	cv::Size projectorSize( projector->getWidth( ), projector->getHeight( ) );
+	cv::Size projectorSize( projector->GetWidth( ), projector->GetHeight( ) );
 
 	// Create a display to give the user some feedback
 	Display display("Calibration");
@@ -116,7 +116,7 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 
 	  // Project a white image so that it is easier to see the calibration board
 	  cv::Mat whiteFrame( projectorSize, CV_8UC3, cv::Scalar(255,255,255));
-	  projector->projectImage(whiteFrame);
+	  projector->ProjectImage(whiteFrame);
 
 	  // Look for the calibration board
 	  cv::Mat colorFrame( capture->getFrame( ) );
@@ -155,7 +155,7 @@ cv::Mat CalibrationEngine::ProjectAndCaptureUnwrappedPhase(shared_ptr<lens::ICam
   NFringeStructuredLight	  fringeGenerator(5);
   TwoWavelengthPhaseUnwrapper phaseUnwrapper;
   vector<cv::Mat>			  wrappedPhase;
-  cv::Size					  projectorSize( projector->getWidth( ), projector->getHeight( ) );
+  cv::Size					  projectorSize( projector->GetWidth( ), projector->GetHeight( ) );
 
   // TODO - How do we know that we want to use 70 and 75? (Settings File?)
   auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, IStructuredLight::Horizontal);
@@ -172,7 +172,7 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamer
 
   for(int patternNumber = 0; patternNumber < fringeImages.size(); ++patternNumber)
   {
-	projector->projectImage(fringeImages[patternNumber]);
+	projector->ProjectImage(fringeImages[patternNumber]);
 	cv::Mat colorFringe( capture->getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );
 	capturedFringes.push_back( gray );
