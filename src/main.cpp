@@ -17,14 +17,18 @@
 int main(int argc, char* argv[])
 {
   // Setup the camera
-  auto camera = shared_ptr<lens::OpenCVCamera>( new lens::OpenCVCamera() );
-  camera->open();
-  assert(camera != nullptr);
+  //auto camera = shared_ptr<lens::OpenCVCamera>( new lens::OpenCVCamera() );
+  //camera->open();
+  //assert(camera != nullptr);
 	
   auto projector = shared_ptr<LightCommanderProjector>( new LightCommanderProjector( ) );
+	assert(projector != nullptr);
+	projector->Init();
+	cv::Mat whiteFrame( cv::Size(1024, 768), CV_8U, cv::Scalar(255));
+	projector->ProjectImage(whiteFrame);
 
   // Setup the calibration engine
   CalibrationEngine calibrationEngine(4, 11);
-  calibrationEngine.CalibrateCamera(camera, 5);
+  //calibrationEngine.CalibrateCamera(camera, 5);
   return 0;
 }
