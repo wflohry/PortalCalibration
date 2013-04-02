@@ -40,6 +40,8 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( shared_ptr
 	bool found = false;
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
+	cv::SimpleBlobDetector::Params detectorParams;
+	detectorParams.blobColor = 255;
 
 	// Create a display to give the user some feedback
 	Display display("Calibration");
@@ -68,7 +70,7 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( shared_ptr
 	  cv::Mat colorFrame( capture->getFrame( ) );
 	  cv::Mat gray;
 	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
-	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID );
+	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID, new cv::SimpleBlobDetector( detectorParams ) );
 
 	  // Make sure we found it, and that we found all the points
 	  if(found && pointBuffer.size() == m_boardMarkerCount)
@@ -87,6 +89,9 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	bool found = false;
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
+	cv::SimpleBlobDetector::Params detectorParams;
+	detectorParams.blobColor = 255;
+
 	cv::Size projectorSize( projector->GetWidth( ), projector->GetHeight( ) );
 
 	// Create a display to give the user some feedback
@@ -122,7 +127,7 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	  cv::Mat colorFrame( capture->getFrame( ) );
 	  cv::Mat gray;
 	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
-	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID );
+	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID, new cv::SimpleBlobDetector( detectorParams ) );
 
 	  // Make sure we found it, and that we found all the points
 	  if(found && pointBuffer.size() == m_boardMarkerCount)
@@ -158,9 +163,17 @@ cv::Mat CalibrationEngine::ProjectAndCaptureUnwrappedPhase(shared_ptr<lens::ICam
   cv::Size					  projectorSize( projector->GetWidth( ), projector->GetHeight( ) );
 
   // TODO - How do we know that we want to use 70 and 75? (Settings File?)
-  auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, IStructuredLight::Horizontal);
-  wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength ) );
-  auto largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, IStructuredLight::Horizontal);
+  auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, direction);
+	auto phase = ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength );
+
+	// TODO - Get rid of this
+	cv::Mat quantizedPhase(phase.size(), CV_8U);
+	phase.convertTo(quantizedPhase, quantizedPhase.depth(), 255.0/(2.0 * 3.14159), 128);
+	cv::imshow("Phase", phase);
+	cv::waitKey(-1);
+
+  wrappedPhase.push_back( phase );
+  auto largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, direction);
   wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
   return phaseUnwrapper.UnwrapPhase(wrappedPhase);
 }
@@ -172,12 +185,15 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamer
 
   for(int patternNumber = 0; patternNumber < fringeImages.size(); ++patternNumber)
   {
-	auto ditheredImage = DitherImage(fringeImages[patternNumber]);
+	auto ditheredImage = DitherImage(fringeImages[patternNumber]);	
 	projector->ProjectImage(ditheredImage);
+	
 	cv::Mat colorFringe( capture->getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );
 	capturedFringes.push_back( gray );
   }
+
+	
 
   NFringeStructuredLight phaseWrapper(fringeImages.size()); 
   return phaseWrapper.WrapPhase(capturedFringes);
@@ -234,34 +250,38 @@ cv::Mat CalibrationEngine::DitherImage(const cv::Mat originalImage)
 {
   // TODO - This only works for a single channel image.
   // TODO - Does this belong here or an ImageUtils class
-  cv::Mat ditheredImage(originalImage.size(), CV_8U);
-  cv::Mat diffusedImage = originalImage.clone();
+  cv::Mat ditheredImage = originalImage.clone();
 
   for( int row = 0; row < originalImage.rows; ++row )
   {
 	for( int col = 0; col < originalImage.cols; ++col )
 	{
 	  // Quantize to binary
-	  diffusedImage.at<uchar>(row, col) = diffusedImage.at<uchar>(row, col) < 128 ? 255 : 0;
+	  ditheredImage.at<uchar>(row, col) = ditheredImage.at<uchar>(row, col) > 128 ? 255 : 0;
 
 	  // Diffuse quantization error
-	  float quantizationError = originalImage.at<uchar>(row, col) - diffusedImage.at<uchar>(row, col);
+	  float quantizationError = originalImage.at<uchar>(row, col) - ditheredImage.at<uchar>(row, col);
 	  if(col+1 < originalImage.cols)
-		{ diffusedImage.at<uchar>(row,col+1) = diffusedImage.at<uchar>(row,col+1) + (7.0/16.0) * quantizationError; }
+		{ ditheredImage.at<uchar>(row,col+1) = ClampPixel(ditheredImage.at<uchar>(row,col+1) + (7.0/16.0) * quantizationError); }
 	  
 	  if(row+1 < originalImage.rows)
 	  {
 		if(col-1 >= 0)
-		  { diffusedImage.at<uchar>(row+1,col-1) = diffusedImage.at<uchar>(row+1,col-1) + (3.0/16.0) * quantizationError; }
+		  { ditheredImage.at<uchar>(row+1,col-1) = ClampPixel(ditheredImage.at<uchar>(row+1,col-1) + (3.0/16.0) * quantizationError); }
 		if(col+1 < originalImage.cols)
-		  { diffusedImage.at<uchar>(row+1,col+1) = diffusedImage.at<uchar>(row+1,col+1) + (1.0/16.0) * quantizationError; }
+		  { ditheredImage.at<uchar>(row+1,col+1) = ClampPixel(ditheredImage.at<uchar>(row+1,col+1) + (1.0/16.0) * quantizationError); }
 
-		diffusedImage.at<uchar>(row+1,col) = diffusedImage.at<uchar>(row+1,col) + (5.0/16.0) * quantizationError;		
+		ditheredImage.at<uchar>(row+1,col) = ClampPixel(ditheredImage.at<uchar>(row+1,col) + (5.0/16.0) * quantizationError);		
 	  }
 	}
   }
 
   return ditheredImage;
+}
+
+uchar CalibrationEngine::ClampPixel(int pixel)
+{
+		return max(0, min(pixel, 255));
 }
 
 float CalibrationEngine::InterpolateProjectorPosition(float phi, float phi0, int pitch)

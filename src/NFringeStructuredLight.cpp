@@ -48,18 +48,18 @@ cv::Mat NFringeStructuredLight::WrapPhase(vector<cv::Mat> fringeImages)
 
   // Should be the same size as our fringe images 
   // and floating point precision for decimal phase values
-  cv::Mat phase(fringeImages[0].size(), CV_32F);
+  cv::Mat phase(fringeImages[0].size(), CV_32F, 0.0f);
 
   for(int row = 0; row < phase.rows; ++row)
   {
 	for(int col = 0; col < phase.cols; ++col)
 	{
-	  float sine = 0;
-	  float cosine = 0;
+	  float sine = 0.0f;
+	  float cosine = 0.0f;
 	  for(int fringe = 0; fringe < m_numberOfFringes; ++fringe)
 	  {
-		sine += fringeImages[fringe].at<uchar>(row, col) * sin(2.0 * M_PI * float(fringe) / float(m_numberOfFringes));
-		cosine += fringeImages[fringe].at<uchar>(row, col) * cos(2.0 * M_PI * float(fringe) / float(m_numberOfFringes));
+		sine += ( float( fringeImages[fringe].at<uchar>(row, col) ) / 255.0 ) * sin(2.0 * M_PI * float(fringe) / float(m_numberOfFringes));
+		cosine += ( float( fringeImages[fringe].at<uchar>(row, col) ) / 255.0 ) * cos(2.0 * M_PI * float(fringe) / float(m_numberOfFringes));
 	  }
 	  phase.at<float>(row, col) = -atan2(sine, cosine);
 	}

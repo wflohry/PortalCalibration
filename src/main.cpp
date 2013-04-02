@@ -7,6 +7,7 @@
 #include <highgui.h>
 
 #include <lens\ICamera.h>
+#include <lens\PointGreyCamera.h>
 #include <lens\OpenCVCamera.h>
 
 #include <reelblink\IProjector.h>
@@ -17,9 +18,9 @@
 int main(int argc, char* argv[])
 {
   // Setup the camera
-  //auto camera = shared_ptr<lens::OpenCVCamera>( new lens::OpenCVCamera() );
-  //camera->open();
-  //assert(camera != nullptr);
+  auto camera = shared_ptr<lens::PointGreyCamera>( new lens::PointGreyCamera() );
+  camera->open();
+  assert(camera != nullptr);
 	
   auto projector = shared_ptr<LightCommanderProjector>( new LightCommanderProjector( ) );
 	assert(projector != nullptr);
@@ -29,6 +30,7 @@ int main(int argc, char* argv[])
 
   // Setup the calibration engine
   CalibrationEngine calibrationEngine(4, 11);
+	calibrationEngine.CalibrateProjector(camera, projector, 5);
   //calibrationEngine.CalibrateCamera(camera, 5);
   return 0;
 }

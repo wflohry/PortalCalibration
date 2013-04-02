@@ -55,6 +55,7 @@ private:
 	void CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData& calibrationData);
 
 	cv::Mat DitherImage(const cv::Mat originalImage);
+	uchar ClampPixel(int pixel);
 	float InterpolateProjectorPosition(float phi, float phi0, int pitch);
 };
 
