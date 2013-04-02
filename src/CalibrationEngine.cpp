@@ -172,7 +172,8 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamer
 
   for(int patternNumber = 0; patternNumber < fringeImages.size(); ++patternNumber)
   {
-	projector->ProjectImage(fringeImages[patternNumber]);
+	auto ditheredImage = DitherImage(fringeImages[patternNumber]);
+	projector->ProjectImage(ditheredImage);
 	cv::Mat colorFringe( capture->getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );
 	capturedFringes.push_back( gray );
@@ -227,6 +228,40 @@ vector<cv::Point3f> CalibrationEngine::CalculateObjectPoints()
   }
 
   return objectPoints;
+}
+
+cv::Mat CalibrationEngine::DitherImage(const cv::Mat originalImage)
+{
+  // TODO - This only works for a single channel image.
+  // TODO - Does this belong here or an ImageUtils class
+  cv::Mat ditheredImage(originalImage.size(), CV_8U);
+  cv::Mat diffusedImage = originalImage.clone();
+
+  for( int row = 0; row < originalImage.rows; ++row )
+  {
+	for( int col = 0; col < originalImage.cols; ++col )
+	{
+	  // Quantize to binary
+	  diffusedImage.at<uchar>(row, col) = diffusedImage.at<uchar>(row, col) < 128 ? 255 : 0;
+
+	  // Diffuse quantization error
+	  float quantizationError = originalImage.at<uchar>(row, col) - diffusedImage.at<uchar>(row, col);
+	  if(col+1 < originalImage.cols)
+		{ diffusedImage.at<uchar>(row,col+1) = diffusedImage.at<uchar>(row,col+1) + (7.0/16.0) * quantizationError; }
+	  
+	  if(row+1 < originalImage.rows)
+	  {
+		if(col-1 >= 0)
+		  { diffusedImage.at<uchar>(row+1,col-1) = diffusedImage.at<uchar>(row+1,col-1) + (3.0/16.0) * quantizationError; }
+		if(col+1 < originalImage.cols)
+		  { diffusedImage.at<uchar>(row+1,col+1) = diffusedImage.at<uchar>(row+1,col+1) + (1.0/16.0) * quantizationError; }
+
+		diffusedImage.at<uchar>(row+1,col) = diffusedImage.at<uchar>(row+1,col) + (5.0/16.0) * quantizationError;		
+	  }
+	}
+  }
+
+  return ditheredImage;
 }
 
 float CalibrationEngine::InterpolateProjectorPosition(float phi, float phi0, int pitch)

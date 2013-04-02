@@ -7,7 +7,7 @@ NFringeStructuredLight::NFringeStructuredLight(unsigned int numberOfFringes) :
 vector<cv::Mat> NFringeStructuredLight::GenerateFringe( const cv::Size fringeSize, const int pitch, IStructuredLight::FringeDirection direction )
 {
   vector<cv::Mat> fringeImages;
-  cv::Mat fringeImage(fringeSize, CV_32F);
+  cv::Mat fringeImage(fringeSize, CV_8U);
   
   // Transpose here to make vertical and then again before it gets added to the vector
   if(direction == IStructuredLight::Vertical)
@@ -20,8 +20,8 @@ vector<cv::Mat> NFringeStructuredLight::GenerateFringe( const cv::Size fringeSiz
 	{
 	  for(int col = 0; col < fringeImage.cols; ++col)
 	  {
-		float waveNum = (1.0 - cos((2.0 * M_PI) * (float(col) / float(pitch)) + phaseShift ) ) * .5;
-		fringeImage.at<float>(row, col) = waveNum;
+		float fringeValue = (1.0 - cos((2.0 * M_PI) * (float(col) / float(pitch)) + phaseShift ) ) * .5;
+		fringeImage.at<uchar>(row, col) = fringeValue * 255;
 	  }
 	}
 
