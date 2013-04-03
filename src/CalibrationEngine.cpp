@@ -164,19 +164,15 @@ cv::Mat CalibrationEngine::ProjectAndCaptureUnwrappedPhase(shared_ptr<lens::ICam
 
   // TODO - How do we know that we want to use 70 and 75? (Settings File?)
   auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, direction);
-	auto phase = ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength );
+  wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength ) );
 
-	// TODO - Get rid of this
-	cv::Mat quantizedPhase(phase.size(), CV_8U);
-	phase.convertTo(quantizedPhase, quantizedPhase.depth(), 255.0/(2.0 * 3.14159), 128);
-	cv::imshow("Phase", phase);
-	cv::waitKey(-1);
+	auto largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, direction);
+	wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
 
-  wrappedPhase.push_back( phase );
-  auto largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, direction);
-  wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
   return phaseUnwrapper.UnwrapPhase(wrappedPhase);
 }
+
+#include <highgui.h>
 
 cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, vector<cv::Mat> fringeImages)
 {
@@ -190,10 +186,8 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamer
 	
 	cv::Mat colorFringe( capture->getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );
-	capturedFringes.push_back( gray );
+	capturedFringes.push_back( gray.clone() );
   }
-
-	
 
   NFringeStructuredLight phaseWrapper(fringeImages.size()); 
   return phaseWrapper.WrapPhase(capturedFringes);
