@@ -14,7 +14,11 @@ set(PROJECT_SOURCES
     Display.h
 	Utils.cpp
     Utils.h
-	
+    
+    ISerializer.h
+    JSSerializer.h
+    JSSerializer.cpp
+
     NFringeStructuredLight.cpp
     NFringestructuredLight.h
     TwoWavelengthPhaseUnwrapper.cpp

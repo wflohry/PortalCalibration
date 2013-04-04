@@ -37,11 +37,11 @@ private:
   const float m_markerDiameter;
 
 public:
-	CalibrationEngine(const int boardWidth, const int boardHeight);
+	CalibrationEngine(const int boardWidth, const int boardHeight, const float markerSize);
 	shared_ptr<CalibrationData> CalibrateCameraIntrinsics(shared_ptr<lens::ICamera> capture, const int requestedSamples);
 	void						CalibrateCameraExtrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<CalibrationData> calibrationData);
 	shared_ptr<CalibrationData> CalibrateProjectorIntrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, const int requestedSamples);
-
+	void						CalibrateProjectorExtrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, shared_ptr<CalibrationData> calibrationData);
 
 private:
 	// Used for aquiring the data for calibration

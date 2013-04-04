@@ -5,7 +5,7 @@ CalibrationData::CalibrationData( void )
   // Default matricies and coefficients that wont affect the image
   m_intrinsicMatrix			= cv::Mat::eye(3, 3, CV_64F);
   m_distortionCoefficients	= cv::Mat::zeros(5, 1, CV_64F);
-  m_rotationMatrix			= cv::Mat::eye(3, 3, CV_64F);
+  m_extrinsicMatrix			= cv::Mat::eye(3, 4, CV_64F);
 }
 
 void CalibrationData::SetIntrinsic( const cv::Mat& intrinsicMatrix )
@@ -20,13 +20,25 @@ void CalibrationData::SetDistortion( const cv::Mat& distortionCoefficients )
 
 void CalibrationData::SetRotationMatrix( const cv::Mat& rotationMatrix )
 {
-  m_rotationMatrix = rotationMatrix;
+  // The first 3 columns should be equal to the rotation transformation
+  for(int col = 0; col < 3; ++col)
+  {
+	m_extrinsicMatrix.col(col) = rotationMatrix.col(col);
+  }
 }
 
 void CalibrationData::SetRotationVector( const cv::Mat& rotationVector )
 {
   // Convert the rotation vector into a rotation matrix
-  cv::Rodrigues(rotationVector, m_rotationMatrix);
+  cv::Mat rotationMatrix;
+  cv::Rodrigues(rotationVector, rotationMatrix);
+  SetRotationMatrix(rotationMatrix);
+}
+
+void CalibrationData::SetTranslationVector( const cv::Mat& translationVector )
+{
+  // Set the 4th row to be the translation (Translation transform)
+  m_extrinsicMatrix.col(4) = translationVector;
 }
 
 const cv::Mat& CalibrationData::GetIntrinsic( )
@@ -37,4 +49,9 @@ const cv::Mat& CalibrationData::GetIntrinsic( )
 const cv::Mat& CalibrationData::GetDistortion( )
 {
   return m_distortionCoefficients;
+}
+
+const cv::Mat& CalibrationData::GetExtrinsic( )
+{
+  return m_extrinsicMatrix;
 }

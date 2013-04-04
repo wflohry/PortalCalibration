@@ -1,9 +1,9 @@
 #include "CalibrationEngine.h"
 
-CalibrationEngine::CalibrationEngine(const int horizontalCount, const int verticalCount) :
+CalibrationEngine::CalibrationEngine(const int horizontalCount, const int verticalCount, const float markerSize) :
   m_boardSize( horizontalCount, verticalCount ),
   m_boardMarkerCount( horizontalCount * verticalCount ),
-  m_markerDiameter( .5 )
+  m_markerDiameter( markerSize )
 { }
 
 shared_ptr<CalibrationData> CalibrationEngine::CalibrateCameraIntrinsics(shared_ptr<lens::ICamera> capture, int requestedSamples)
@@ -11,15 +11,17 @@ shared_ptr<CalibrationData> CalibrationEngine::CalibrateCameraIntrinsics(shared_
   // Grab views and place them in the matrixes
   auto objectPoints = CalculateObjectPoints( ); 
   auto imagePoints = GrabCameraImagePoints(capture, requestedSamples);
-
   // Calibrate for intrinsics
-  auto calibrationData = CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth( ), capture->getHeight( ) ) );
-  
-  // Calibrate for extrinsics
-  imagePoints = GrabCameraImagePoints(capture, 1); // Only use 1 since we are capturing for 1 view
-  CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
+  return CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth( ), capture->getHeight( ) ) );;
+}
 
-  return calibrationData;
+void CalibrationEngine::CalibrateCameraExtrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<CalibrationData> calibrationData)
+{
+  // Grab views for the projector
+  auto objectPoints = CalculateObjectPoints( );
+  auto imagePoints = GrabCameraImagePoints(capture, 1);
+  // Calibrate for projector extrinsics
+  CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
 }
 
 shared_ptr<CalibrationData> CalibrationEngine::CalibrateProjectorIntrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples)
@@ -27,15 +29,17 @@ shared_ptr<CalibrationData> CalibrationEngine::CalibrateProjectorIntrinsics(shar
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
   auto imagePoints = GrabProjectorImagePoints( capture, projector, requestedSamples );
-
   // Calibrate for projector intrinsics
-  auto calibrationData = CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth(), capture->getHeight( ) ) );
+  return CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth(), capture->getHeight( ) ) );
+}
 
-  // Calibrate for extrinsics
-  imagePoints = GrabProjectorImagePoints( capture, projector, 1 ); // Only using 1 since we are capturing for 1 view
+void CalibrationEngine::CalibrateProjectorExtrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, shared_ptr<CalibrationData> calibrationData)
+{
+  // Grab views for the projector
+  auto objectPoints = CalculateObjectPoints( );
+  auto imagePoints = GrabProjectorImagePoints( capture, projector, 1 ); // Only using 1 since we are capturing for 1 view
+  // Calibrate for projector extrinsics
   CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
-
-  return calibrationData;
 }
 
 vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( shared_ptr<lens::ICamera> capture, int poses2Capture )

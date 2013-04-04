@@ -12,7 +12,7 @@ class CalibrationData
 private:
   cv::Mat m_intrinsicMatrix;
   cv::Mat m_distortionCoefficients;
-  cv::Mat m_rotationMatrix;
+  cv::Mat m_extrinsicMatrix;
 
 public:
   /**
@@ -25,9 +25,11 @@ public:
   void SetDistortion( const cv::Mat& distortionCoefficients );
   void SetRotationMatrix( const cv::Mat& rotationMatrix );
   void SetRotationVector( const cv::Mat& rotationVector );
+  void SetTranslationVector( const cv::Mat& translationVector );
 
   const cv::Mat& GetIntrinsic( );
   const cv::Mat& GetDistortion( );
+  const cv::Mat& GetExtrinsic( );
 };
 
 #endif // _H_PORTAL_CALIBRATION_CALIBRATION_DATA_

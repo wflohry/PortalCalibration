@@ -14,7 +14,7 @@ void Display::ShowImage( cv::Mat image )
 {
   // If we have a message, write it before we output the image
   if( !m_currentMessage.empty() )
-	{ cv::putText(image, m_currentMessage, cv::Point( 50, 50 ), cv::FONT_HERSHEY_TRIPLEX, .5, cv::Scalar(0.0) ); }
+	{ cv::putText(image, m_currentMessage, cv::Point( 50, 50 ), cv::FONT_HERSHEY_TRIPLEX, .5, cv::Scalar(0.0, 1.0, 0.0) ); }
 
   cv::imshow(m_displayName, image);
 }

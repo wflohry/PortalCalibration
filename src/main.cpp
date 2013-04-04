@@ -17,20 +17,27 @@
 
 int main(int argc, char* argv[])
 {
+  const int intrinsicSamples = 10;
+
   // Setup the camera
   auto camera = shared_ptr<lens::PointGreyCamera>( new lens::PointGreyCamera() );
-  camera->open();
-  assert(camera != nullptr);
+  Utils::AssertOrThrowIfFalse( nullptr != camera, "Unable to create the camera object" );
+  Utils::AssertOrThrowIfFalse( camera->open( ), "Unable to initialize the camera" );
 	
   auto projector = shared_ptr<LightCommanderProjector>( new LightCommanderProjector( ) );
-  assert(projector != nullptr);
-  projector->Init();
-  cv::Mat whiteFrame( cv::Size(1024, 768), CV_8U, cv::Scalar(255));
-  projector->ProjectImage(whiteFrame);
-
+  Utils::AssertOrThrowIfFalse( nullptr != projector, "Unable to create the projector object" );
+  Utils::AssertOrThrowIfFalse( projector->Init(), "Unable to intialize the projector" );
+  
   // Setup the calibration engine
-  CalibrationEngine calibrationEngine(4, 11);
-  auto projectorCalibration = calibrationEngine.CalibrateProjectorIntrinsics(camera, projector, 1);
-  //calibrationEngine.CalibrateCamera(camera, 5);
+  CalibrationEngine calibrationEngine(4, 11, .5f);
+  
+  // Calibrate intrinsics for the camera and projector
+  auto cameraCalibration = calibrationEngine.CalibrateCameraIntrinsics(camera, intrinsicSamples);
+  auto projectorCalibration = calibrationEngine.CalibrateProjectorIntrinsics(camera, projector, intrinsicSamples);
+  
+  // Calibrate extrinsics for the camera and projector
+  calibrationEngine.CalibrateProjectorExtrinsics(camera, projector, projectorCalibration);
+  calibrationEngine.CalibrateCameraExtrinsics(camera, cameraCalibration);
+
   return 0;
 }
