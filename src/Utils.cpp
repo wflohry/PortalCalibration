@@ -1,5 +1,10 @@
 #include "Utils.h"
 
+unsigned char Utils::ClampPixel(int pixel)
+{
+  return max(0, min(pixel, 255));
+}
+
 void Utils::AssertOrThrowIfFalse(bool condition, string errorMessage)
 {
   if(!condition)

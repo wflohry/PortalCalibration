@@ -38,8 +38,10 @@ private:
 
 public:
 	CalibrationEngine(const int boardWidth, const int boardHeight);
-	shared_ptr<CalibrationData> CalibrateCamera(shared_ptr<lens::ICamera> capture, int requestedSamples);
-	shared_ptr<CalibrationData> CalibrateProjector(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples);
+	shared_ptr<CalibrationData> CalibrateCameraIntrinsics(shared_ptr<lens::ICamera> capture, const int requestedSamples);
+	void						CalibrateCameraExtrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<CalibrationData> calibrationData);
+	shared_ptr<CalibrationData> CalibrateProjectorIntrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, const int requestedSamples);
+
 
 private:
 	// Used for aquiring the data for calibration
@@ -55,7 +57,6 @@ private:
 	void CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, shared_ptr<CalibrationData> calibrationData);
 
 	cv::Mat DitherImage(const cv::Mat originalImage);
-	uchar ClampPixel(int pixel);
 	float InterpolateProjectorPosition(float phi, float phi0, int pitch);
 };
 

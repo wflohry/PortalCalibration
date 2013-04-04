@@ -17,6 +17,7 @@ using namespace std;
 class Utils
 {
 public:
+  static unsigned char ClampPixel(int pixel);
   static void AssertOrThrowIfFalse(bool condition, string errorMessage);
 };
 

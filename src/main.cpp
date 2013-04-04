@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 
   // Setup the calibration engine
   CalibrationEngine calibrationEngine(4, 11);
-  auto projectorCalibration = calibrationEngine.CalibrateProjector(camera, projector, 1);
+  auto projectorCalibration = calibrationEngine.CalibrateProjectorIntrinsics(camera, projector, 1);
   //calibrationEngine.CalibrateCamera(camera, 5);
   return 0;
 }

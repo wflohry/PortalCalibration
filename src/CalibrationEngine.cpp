@@ -6,7 +6,7 @@ CalibrationEngine::CalibrationEngine(const int horizontalCount, const int vertic
   m_markerDiameter( .5 )
 { }
 
-shared_ptr<CalibrationData> CalibrationEngine::CalibrateCamera(shared_ptr<lens::ICamera> capture, int requestedSamples)
+shared_ptr<CalibrationData> CalibrationEngine::CalibrateCameraIntrinsics(shared_ptr<lens::ICamera> capture, int requestedSamples)
 {
   // Grab views and place them in the matrixes
   auto objectPoints = CalculateObjectPoints( ); 
@@ -22,7 +22,7 @@ shared_ptr<CalibrationData> CalibrationEngine::CalibrateCamera(shared_ptr<lens::
   return calibrationData;
 }
 
-shared_ptr<CalibrationData> CalibrationEngine::CalibrateProjector(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples)
+shared_ptr<CalibrationData> CalibrationEngine::CalibrateProjectorIntrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples)
 {
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
@@ -126,6 +126,7 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	  // Project a white image so that it is easier to see the calibration board
 	  cv::Mat whiteFrame( projectorSize, CV_8UC3, cv::Scalar(255,255,255));
 	  projector->ProjectImage(whiteFrame);
+	  Sleep(200); // Give the projector time to project the image
 
 	  // Look for the calibration board
 	  cv::Mat colorFrame( capture->getFrame( ) );
@@ -187,6 +188,7 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamer
   {
 	auto ditheredImage = DitherImage(fringeImages[patternNumber]);	
 	projector->ProjectImage(ditheredImage);
+	Sleep(200); // Give the projector time to project the image
 	
 	cv::Mat colorFringe( capture->getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );
@@ -260,26 +262,21 @@ cv::Mat CalibrationEngine::DitherImage(const cv::Mat originalImage)
 	  // Diffuse quantization error
 	  float quantizationError = originalImage.at<uchar>(row, col) - ditheredImage.at<uchar>(row, col);
 	  if(col+1 < originalImage.cols)
-		{ ditheredImage.at<uchar>(row,col+1) = ClampPixel(ditheredImage.at<uchar>(row,col+1) + (7.0/16.0) * quantizationError); }
+		{ ditheredImage.at<uchar>(row,col+1) = Utils::ClampPixel(ditheredImage.at<uchar>(row,col+1) + (7.0/16.0) * quantizationError); }
 	  
 	  if(row+1 < originalImage.rows)
 	  {
 		if(col-1 >= 0)
-		  { ditheredImage.at<uchar>(row+1,col-1) = ClampPixel(ditheredImage.at<uchar>(row+1,col-1) + (3.0/16.0) * quantizationError); }
+		  { ditheredImage.at<uchar>(row+1,col-1) = Utils::ClampPixel(ditheredImage.at<uchar>(row+1,col-1) + (3.0/16.0) * quantizationError); }
 		if(col+1 < originalImage.cols)
-		  { ditheredImage.at<uchar>(row+1,col+1) = ClampPixel(ditheredImage.at<uchar>(row+1,col+1) + (1.0/16.0) * quantizationError); }
+		  { ditheredImage.at<uchar>(row+1,col+1) = Utils::ClampPixel(ditheredImage.at<uchar>(row+1,col+1) + (1.0/16.0) * quantizationError); }
 
-		ditheredImage.at<uchar>(row+1,col) = ClampPixel(ditheredImage.at<uchar>(row+1,col) + (5.0/16.0) * quantizationError);		
+		ditheredImage.at<uchar>(row+1,col) = Utils::ClampPixel(ditheredImage.at<uchar>(row+1,col) + (5.0/16.0) * quantizationError);		
 	  }
 	}
   }
 
   return ditheredImage;
-}
-
-uchar CalibrationEngine::ClampPixel(int pixel)
-{
-  return max(0, min(pixel, 255));
 }
 
 float CalibrationEngine::InterpolateProjectorPosition(float phi, float phi0, int pitch)
