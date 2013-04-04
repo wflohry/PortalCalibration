@@ -6,7 +6,7 @@ CalibrationEngine::CalibrationEngine(const int horizontalCount, const int vertic
   m_markerDiameter( .5 )
 { }
 
-void CalibrationEngine::CalibrateCamera(shared_ptr<lens::ICamera> capture, int requestedSamples)
+shared_ptr<CalibrationData> CalibrationEngine::CalibrateCamera(shared_ptr<lens::ICamera> capture, int requestedSamples)
 {
   // Grab views and place them in the matrixes
   auto objectPoints = CalculateObjectPoints( ); 
@@ -18,9 +18,11 @@ void CalibrationEngine::CalibrateCamera(shared_ptr<lens::ICamera> capture, int r
   // Calibrate for extrinsics
   imagePoints = GrabCameraImagePoints(capture, 1); // Only use 1 since we are capturing for 1 view
   CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
+
+  return calibrationData;
 }
 
-void CalibrationEngine::CalibrateProjector(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples)
+shared_ptr<CalibrationData> CalibrationEngine::CalibrateProjector(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples)
 {
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
@@ -32,6 +34,8 @@ void CalibrationEngine::CalibrateProjector(shared_ptr<lens::ICamera> capture, sh
   // Calibrate for extrinsics
   imagePoints = GrabProjectorImagePoints( capture, projector, 1 ); // Only using 1 since we are capturing for 1 view
   CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
+
+  return calibrationData;
 }
 
 vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( shared_ptr<lens::ICamera> capture, int poses2Capture )
@@ -193,7 +197,7 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamer
   return phaseWrapper.WrapPhase(capturedFringes);
 }
 
-CalibrationData CalibrationEngine::CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize)
+shared_ptr<CalibrationData> CalibrationEngine::CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize)
 {
   // Start with the identity and it will get refined from there
   cv::Mat distortionCoefficients = cv::Mat::zeros(5, 1, CV_64F);
@@ -207,26 +211,26 @@ CalibrationData CalibrationEngine::CalibrateView(vector<cv::Point3f> objectPoint
 
   cv::calibrateCamera(objectPointList, imagePoints, viewSize, intrinsicMatrix, distortionCoefficients, rotationVectors, translationVectors, CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
 
-  CalibrationData data;
-  data.SetDistortion(distortionCoefficients);
-  data.SetIntrinsic(intrinsicMatrix);
+  auto calibrationData = make_shared<CalibrationData>( );
+  calibrationData->SetDistortion(distortionCoefficients);
+  calibrationData->SetIntrinsic(intrinsicMatrix);
   
-  return data;
+  return calibrationData;
 }
 
-void CalibrationEngine::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData& calibrationData)
+void CalibrationEngine::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, shared_ptr<CalibrationData> calibrationData)
 {
   cv::Mat rotationVector;
   cv::Mat translationVector;
 
-  cv::solvePnP(objectPoints, imagePoints, calibrationData.GetIntrinsic(), calibrationData.GetDistortion(), rotationVector, translationVector);
-  calibrationData.SetRotationVector(rotationVector);
+  cv::solvePnP(objectPoints, imagePoints[0], calibrationData->GetIntrinsic(), calibrationData->GetDistortion(), rotationVector, translationVector);
+  calibrationData->SetRotationVector(rotationVector);
 }
 
 vector<cv::Point3f> CalibrationEngine::CalculateObjectPoints()
 {
   vector<cv::Point3f> objectPoints;
-
+	
   for( int row = 0; row < m_boardSize.height; ++row )
   {
 	for( int col = 0; col < m_boardSize.width; ++col )
@@ -275,7 +279,7 @@ cv::Mat CalibrationEngine::DitherImage(const cv::Mat originalImage)
 
 uchar CalibrationEngine::ClampPixel(int pixel)
 {
-		return max(0, min(pixel, 255));
+  return max(0, min(pixel, 255));
 }
 
 float CalibrationEngine::InterpolateProjectorPosition(float phi, float phi0, int pitch)

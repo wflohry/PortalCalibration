@@ -38,8 +38,8 @@ private:
 
 public:
 	CalibrationEngine(const int boardWidth, const int boardHeight);
-	void CalibrateCamera(shared_ptr<lens::ICamera> capture, int requestedSamples);
-	void CalibrateProjector(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples);
+	shared_ptr<CalibrationData> CalibrateCamera(shared_ptr<lens::ICamera> capture, int requestedSamples);
+	shared_ptr<CalibrationData> CalibrateProjector(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples);
 
 private:
 	// Used for aquiring the data for calibration
@@ -51,8 +51,8 @@ private:
 	vector<cv::Point3f> CalculateObjectPoints();
 
 	// Used for the actual calibration
-	CalibrationData CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize);
-	void CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData& calibrationData);
+	shared_ptr<CalibrationData> CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize);
+	void CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, shared_ptr<CalibrationData> calibrationData);
 
 	cv::Mat DitherImage(const cv::Mat originalImage);
 	uchar ClampPixel(int pixel);
