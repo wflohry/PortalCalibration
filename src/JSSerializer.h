@@ -18,7 +18,7 @@ public:
   bool Serialize(shared_ptr<CalibrationData> calibrationData);
 
 private:
-  void _SerializeMatrix(ofstream& jsFile, cv::Mat matrix2Serialize);
+  void _SerializeMatrix(ofstream& jsFile, const cv::Mat& matrix2Serialize);
 };
 
 #endif // _H_PORTAL_CALIBRATION_JS_SERIALIZER_

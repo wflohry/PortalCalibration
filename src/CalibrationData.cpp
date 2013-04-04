@@ -23,7 +23,7 @@ void CalibrationData::SetRotationMatrix( const cv::Mat& rotationMatrix )
   // The first 3 columns should be equal to the rotation transformation
   for(int col = 0; col < 3; ++col)
   {
-	m_extrinsicMatrix.col(col) = rotationMatrix.col(col);
+	rotationMatrix.col( col ).copyTo( m_extrinsicMatrix.col( col ) );
   }
 }
 
@@ -38,7 +38,7 @@ void CalibrationData::SetRotationVector( const cv::Mat& rotationVector )
 void CalibrationData::SetTranslationVector( const cv::Mat& translationVector )
 {
   // Set the 4th row to be the translation (Translation transform)
-  m_extrinsicMatrix.col(4) = translationVector;
+  translationVector.col( 0 ).copyTo( m_extrinsicMatrix.col( 3 ) );
 }
 
 const cv::Mat& CalibrationData::GetIntrinsic( )

@@ -158,6 +158,9 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 		imagePoints.push_back(projectorPointBuffer);
 		++successes;
 	  }
+
+	  // Project white again so we can see
+	  projector->ProjectImage(whiteFrame);
 	} // End collection while loop
 
 	return imagePoints;
@@ -226,11 +229,13 @@ shared_ptr<CalibrationData> CalibrationEngine::CalibrateView(vector<cv::Point3f>
 
 void CalibrationEngine::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, shared_ptr<CalibrationData> calibrationData)
 {
-  cv::Mat rotationVector;
-  cv::Mat translationVector;
+  cv::Mat rotationVector = cv::Mat::zeros(3, 1, CV_64F);
+  cv::Mat translationVector = cv::Mat::zeros(3, 1, CV_64F);
 
-  cv::solvePnP(objectPoints, imagePoints[0], calibrationData->GetIntrinsic(), calibrationData->GetDistortion(), rotationVector, translationVector);
+  cv::solvePnPRansac(objectPoints, imagePoints[0], calibrationData->GetIntrinsic(), calibrationData->GetDistortion(), rotationVector, translationVector);
+  
   calibrationData->SetRotationVector(rotationVector);
+  calibrationData->SetTranslationVector(translationVector);
 }
 
 vector<cv::Point3f> CalibrationEngine::CalculateObjectPoints()

@@ -31,15 +31,16 @@ bool JSSerializer::Serialize( shared_ptr<CalibrationData> calibrationData )
   return true;
 }
 
-void JSSerializer::_SerializeMatrix(ofstream& jsFile, cv::Mat matrix2Serialize)
+void JSSerializer::_SerializeMatrix(ofstream& jsFile, const cv::Mat& matrix2Serialize)
 {
   for(int row = 0; row < matrix2Serialize.rows; ++row)
   {
 	for(int col = 0; col < matrix2Serialize.cols; ++col)
 	{
-	  jsFile << matrix2Serialize.at<float>(row, col);
 	  
-	  if( (row < matrix2Serialize.rows - 1) && (col < matrix2Serialize.cols - 1) )
+	  jsFile << matrix2Serialize.at<double>(row, col);
+	  
+	  if( (row < matrix2Serialize.rows - 1) || (col < matrix2Serialize.cols - 1) )
 		{ jsFile << ","; }
 	}
   }
