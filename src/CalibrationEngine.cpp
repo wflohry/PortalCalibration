@@ -1,7 +1,7 @@
 #include "CalibrationEngine.h"
 
 CalibrationEngine::CalibrationEngine(const int horizontalCount, const int verticalCount, const float markerSize) :
-  m_boardSize( horizontalCount, verticalCount ),
+  m_boardSize( verticalCount, horizontalCount ), // These are switched since we are dealing with row major matricies
   m_boardMarkerCount( horizontalCount * verticalCount ),
   m_markerDiameter( markerSize )
 { }
@@ -242,13 +242,14 @@ vector<cv::Point3f> CalibrationEngine::CalculateObjectPoints()
 {
   vector<cv::Point3f> objectPoints;
 	
-  for( int row = 0; row < m_boardSize.height; ++row )
+  // TODO - This is backwards here since boardSize is number of rows x cols. Should look into a better way
+  for( int col = 0; col < m_boardSize.height; ++col )
   {
-	for( int col = 0; col < m_boardSize.width; ++col )
+	for( int row = 0; row < m_boardSize.width; ++row )
 	{
-	  objectPoints.push_back( cv::Point3f( float(2.0 * col + row % 2) * m_markerDiameter,
-										   float(row * m_markerDiameter),
-										   0.0f));
+	  objectPoints.push_back( cv::Point3f(col * m_markerDiameter,
+										  ((2.0 * row) + (col % 2)) * m_markerDiameter,
+										  0.0f));
 	}
   }
 
