@@ -11,3 +11,13 @@ TEST(NFringeStructuredLight, GenerateFringe_CorrectN)
 
   EXPECT_EQ(fringe.size(), 5);
 }
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  auto testReturn = RUN_ALL_TESTS( );
+
+  // Insert a pause so that the command prompt stays open
+  system("pause");
+  return testReturn;
+}
