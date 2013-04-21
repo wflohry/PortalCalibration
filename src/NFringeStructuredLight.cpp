@@ -61,7 +61,8 @@ cv::Mat NFringeStructuredLight::WrapPhase(vector<cv::Mat> fringeImages)
 		sine += ( float( fringeImages[fringe].at<uchar>(row, col) ) / 255.0 ) * sin(2.0 * M_PI * float(fringe) / float(m_numberOfFringes));
 		cosine += ( float( fringeImages[fringe].at<uchar>(row, col) ) / 255.0 ) * cos(2.0 * M_PI * float(fringe) / float(m_numberOfFringes));
 	  }
-	  phase.at<float>(row, col) = atan2(sine, cosine);
+	  // This is negative so that are phase gradient increases from 0 -> rows or 0 -> cols
+	  phase.at<float>(row, col) = -atan2(sine, cosine);
 	}
   }
 
