@@ -19,7 +19,7 @@ TEST(NFringeStructuredLight, CorrectHorizontalPhaseDirection)
   auto wrappedPhase = structuredLight.WrapPhase(fringe);
 
   auto previousPhase = wrappedPhase.at<float>(0,0);
-  for(int loc = 1; loc < wrappedPhase.cols; ++ loc)
+  for(int loc = 1; loc < wrappedPhase.cols; ++loc)
   {
 	// If there is a phase jump, skip the check
 	if(! (previousPhase > 0 && wrappedPhase.at<float>(0, loc) < 0) )
@@ -38,7 +38,7 @@ TEST(NFringeStructuredLight, CorrectVerticalPhaseDirection)
   auto wrappedPhase = structuredLight.WrapPhase(fringe);
 
   auto previousPhase = wrappedPhase.at<float>(0,0);
-  for(int loc = 1; loc < wrappedPhase.rows; ++ loc)
+  for(int loc = 1; loc < wrappedPhase.rows; ++loc)
   {
 	// If there is a phase jump, skip the check
 	if(! (previousPhase > 0 && wrappedPhase.at<float>(loc, 0) < 0) )
