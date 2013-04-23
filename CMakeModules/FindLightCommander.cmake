@@ -21,7 +21,7 @@ if( WIN32 )
         set( COMPILER_PATH "C:/Program\ Files/Microsoft\ Visual\ Studio\ .NET\ 2003/Vc7" )
     endif( MSVC71 )
 
-    SET( LIGHTCOMMANDER_NAMES PortabilityLayer USBlib)
+    SET( LIGHTCOMMANDER_NAMES PortabilityLayer USBlib DlpCommDLL)
 
     # Check which libs we should compile against
     option(LIGHTCOMMANDER_USE_64 "Build with 64 bit libraries" OFF)

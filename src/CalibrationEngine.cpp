@@ -49,7 +49,9 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( shared_ptr
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
 	cv::SimpleBlobDetector::Params detectorParams;
-	detectorParams.blobColor = 255;
+	detectorParams.blobColor	= 255;
+	detectorParams.minThreshold = 10.0f;
+	detectorParams.maxThreshold = 250.0f;
 
 	// Create a display to give the user some feedback
 	Display display("Calibration");
@@ -98,7 +100,9 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
 	cv::SimpleBlobDetector::Params detectorParams;
-	detectorParams.blobColor = 255;
+	detectorParams.blobColor	= 255;
+	detectorParams.minThreshold = 10.0f;
+	detectorParams.maxThreshold = 250.0f;
 
 	cv::Size projectorSize( projector->GetWidth( ), projector->GetHeight( ) );
 
