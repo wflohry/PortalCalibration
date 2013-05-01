@@ -1,6 +1,7 @@
 #ifndef _PORTAL_CAPTURE_UTILS_H_
 #define _PORTAL_CAPTURE_UTILS_H_
 
+#include <cv.h>
 #include <string>
 #include <assert.h>
 
@@ -18,6 +19,7 @@ class Utils
 {
 public:
   static unsigned char ClampPixel(int pixel);
+  static unsigned char SampleAt(cv::Mat mat, float u, float v);
   static void AssertOrThrowIfFalse(bool condition, string errorMessage);
 };
 
