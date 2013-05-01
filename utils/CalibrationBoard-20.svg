@@ -14,7 +14,7 @@
    id="svg2"
    height="765"
    width="990"
-   sodipodi:docname="CalibrationBoard.svg">
+   sodipodi:docname="CalibrationBoard-20.svg">
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -23,15 +23,15 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.74642639"
-     inkscape:cx="350.27663"
+     inkscape:cx="196.20919"
      inkscape:cy="406.34831"
      inkscape:document-units="px"
      inkscape:current-layer="layer3"
      showgrid="false"
      units="mm"
-     inkscape:window-width="1538"
-     inkscape:window-height="877"
-     inkscape:window-x="54"
+     inkscape:window-width="1680"
+     inkscape:window-height="988"
+     inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1" />
   <defs
@@ -585,9 +585,10 @@
   <g
      inkscape:groupmode="layer"
      id="layer3"
-     inkscape:label="Info">
+     inkscape:label="Info"
+     sodipodi:insensitive="true">
     <path
-       style="stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#Arrow1Mstarta);stroke:#ffffff;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-width:5;marker-mid:none;fill:none"
+       style="fill:none;stroke:#ffffff;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-start:url(#Arrow1Mstarta);marker-mid:none"
        d="m 73.684426,81.744418 0,71.004992"
        id="path4072"
        inkscape:connector-curvature="0" />
@@ -602,6 +603,11 @@
          id="tspan5514"
          x="86.794334"
          y="103.6395"
-         style="fill:#ffffff;fill-opacity:1">Up</tspan></text>
+         style="font-size:24px;fill:#ffffff;fill-opacity:1">   Up</tspan><tspan
+         sodipodi:role="line"
+         x="86.794334"
+         y="133.6395"
+         style="font-size:24px;fill:#ffffff;fill-opacity:1"
+         id="tspan3885">20mm</tspan></text>
   </g>
 </svg>
