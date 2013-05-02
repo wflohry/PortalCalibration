@@ -18,7 +18,7 @@
 
 int main(int argc, char* argv[])
 {
-  const int intrinsicSamples = 3;
+  const int intrinsicSamples = 12;
 
   // Setup the camera
   auto camera = shared_ptr<lens::PointGreyCamera>( new lens::PointGreyCamera() );
@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
   Utils::AssertOrThrowIfFalse( projector->Init(), "Unable to intialize the projector" );
   
   // Setup the calibration engine
-  CalibrationEngine calibrationEngine(11, 4, 20.0f);
+  CalibrationEngine calibrationEngine(11, 4, 10.0f);
   
   // Calibrate intrinsics for the camera and projector
   auto projectorCalibration = calibrationEngine.CalibrateProjectorIntrinsics(camera, projector, intrinsicSamples);

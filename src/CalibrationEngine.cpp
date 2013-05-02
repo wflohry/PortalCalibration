@@ -155,8 +155,10 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 		  // Use the horizontal unwrapped phase to get the x and vertical for y
 		  // TODO - -1.8 is not correct
 		  projectorPointBuffer.push_back(cv::Point2f(
-			InterpolateProjectorPosition(horizontalUnwrappedPhase.at<float>(pointBuffer[coord]), -1.8f, 70),
-			InterpolateProjectorPosition(verticalUnwrappedPhase.at<float>(pointBuffer[coord]), -1.8f, 70)));
+			InterpolateProjectorPosition(Utils::SampleAt<float>(horizontalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70),
+			InterpolateProjectorPosition(Utils::SampleAt<float>(verticalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70)));
+			//InterpolateProjectorPosition(horizontalUnwrappedPhase.at<float>(pointBuffer[coord]), -1.8f, 70),
+			//InterpolateProjectorPosition(verticalUnwrappedPhase.at<float>(pointBuffer[coord]), -1.8f, 70)));
 		}
 
 		imagePoints.push_back(projectorPointBuffer);
