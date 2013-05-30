@@ -32,6 +32,7 @@ private:
 
 public:
   NFringeStructuredLight(unsigned int numberOfFringes);
+  
   vector<cv::Mat> GenerateFringe( const cv::Size fringeSize, const int pitch, FringeDirection direction );
   cv::Mat WrapPhase(vector<cv::Mat> fringeImages);
 };

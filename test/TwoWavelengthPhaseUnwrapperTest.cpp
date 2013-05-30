@@ -8,7 +8,7 @@
 TEST(TwoWavelengthPhaseUnwrapper, CheckCorrectUnwrapping)
 {
   NFringeStructuredLight structuredLight(5);
-  TwoWavelengthPhaseUnwrapper phaseUnwrapper;
+  TwoWavelengthPhaseUnwrapper phaseUnwrapper(70, 75);
 
   auto fringe70 = structuredLight.GenerateFringe(cv::Size(128,128), 70, IStructuredLight::Horizontal);
   auto fringe75 = structuredLight.GenerateFringe(cv::Size(128,128), 75, IStructuredLight::Horizontal);
@@ -27,4 +27,10 @@ TEST(TwoWavelengthPhaseUnwrapper, CheckCorrectUnwrapping)
 
 	previousPhase = unwrappedPhase.at<float>(0, loc);
   }
+}
+
+TEST(TwoWavelengthPhaseUnwrapper, CheckInvalidPitch )
+{
+  // Having the same pitches should be invalid since they cannot be used to unwrap each other
+  EXPECT_ANY_THROW(TwoWavelengthPhaseUnwrapper phaseUnwrapper(70, 70) );
 }

@@ -18,7 +18,12 @@ class PhaseUnwrapper
 
 class TwoWavelengthPhaseUnwrapper : public PhaseUnwrapper
 {
+  private:
+	const int m_pitch1;
+	const int m_pitch2;
+
   public:
+	TwoWavelengthPhaseUnwrapper( int pitch1, int pitch2 );
 	cv::Mat UnwrapPhase(vector<cv::Mat> wrappedPhase);
 };
 
