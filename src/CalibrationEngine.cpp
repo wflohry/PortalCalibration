@@ -175,10 +175,10 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 cv::Mat CalibrationEngine::ProjectAndCaptureUnwrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, IStructuredLight::FringeDirection direction)
 {
   // TODO - How do we know that we want to use 5? (Settings File?)
-  NFringeStructuredLight	  fringeGenerator(5);
-  TwoWavelengthPhaseUnwrapper phaseUnwrapper;
-  vector<cv::Mat>			  wrappedPhase;
-  cv::Size					  projectorSize( projector->GetWidth( ), projector->GetHeight( ) );
+  NFringeStructuredLight    	fringeGenerator(5);
+  TwoWavelengthPhaseUnwrapper   phaseUnwrapper( 70, 75 );
+  vector<cv::Mat>			    wrappedPhase;
+  cv::Size					    projectorSize( projector->GetWidth( ), projector->GetHeight( ) );
 
   // TODO - How do we know that we want to use 70 and 75? (Settings File?)
   auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, direction);

@@ -11,7 +11,7 @@ void Utils::AssertOrThrowIfFalse(bool condition, string errorMessage)
   {
 	//	We failed our condition. Try assert so that we have stack trace
 	//	otherwise throw an exception
-	assert(condition);
+	//assert( condition );
 	throw errorMessage;
   }
 }
