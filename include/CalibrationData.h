@@ -7,8 +7,14 @@
 // OpenCV includes
 #include <cv.h>
 
-class CalibrationData
+// QT includes
+#include <QObject>
+#include <QMetaType>
+
+class CalibrationData : public QObject
 {
+  Q_OBJECT
+
 private:
   cv::Mat m_intrinsicMatrix;
   cv::Mat m_distortionCoefficients;
@@ -31,5 +37,7 @@ public:
   const cv::Mat& GetDistortion( );
   const cv::Mat& GetExtrinsic( );
 };
+
+Q_DECLARE_METATYPE(CalibrationData*)
 
 #endif // _H_PORTAL_CALIBRATION_CALIBRATION_DATA_

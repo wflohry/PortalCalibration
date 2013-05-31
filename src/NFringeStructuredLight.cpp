@@ -1,5 +1,8 @@
 #include "NFringeStructuredLight.h"
 
+NFringeStructuredLight::NFringeStructuredLight( ) : m_numberOfFringes( 5 )
+{ }
+
 NFringeStructuredLight::NFringeStructuredLight(unsigned int numberOfFringes) :
   m_numberOfFringes(numberOfFringes)
 { }

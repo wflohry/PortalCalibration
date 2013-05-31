@@ -1,8 +1,10 @@
 #ifndef _H_PORTAL_CALIBRATION_JS_SERIALIZER_
 #define _H_PORTAL_CALIBRATION_JS_SERIALIZER_
 
-#include <memory>
 #include <fstream>
+
+#include <QObject>
+#include <QString>
 
 #include "ISerializer.h"
 
@@ -10,12 +12,16 @@ using namespace std;
 
 class JSSerializer : public ISerializer
 {
+  Q_OBJECT
+
 private:
-  const string m_filename;
+  const QString m_filename;
 
 public:
-  JSSerializer(string filename);
-  bool Serialize(shared_ptr<CalibrationData> calibrationData);
+  JSSerializer(QString filename);
+
+public slots:
+  bool Serialize(CalibrationData& calibrationData);
 
 private:
   void _SerializeMatrix(ofstream& jsFile, const cv::Mat& matrix2Serialize);

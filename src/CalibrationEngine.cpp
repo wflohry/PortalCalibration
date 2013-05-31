@@ -6,43 +6,43 @@ CalibrationEngine::CalibrationEngine(const int horizontalCount, const int vertic
   m_markerDiameter( markerSize )
 { }
 
-shared_ptr<CalibrationData> CalibrationEngine::CalibrateCameraIntrinsics(shared_ptr<lens::ICamera> capture, int requestedSamples)
+CalibrationData* CalibrationEngine::CalibrateCameraIntrinsics(lens::ICamera* capture, int requestedSamples)
 {
   // Grab views and place them in the matrixes
   auto objectPoints = CalculateObjectPoints( ); 
-  auto imagePoints = GrabCameraImagePoints(capture, requestedSamples);
+  auto imagePoints = GrabCameraImagePoints( *capture, requestedSamples );
   // Calibrate for intrinsics
   return CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth( ), capture->getHeight( ) ) );;
 }
 
-void CalibrationEngine::CalibrateCameraExtrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<CalibrationData> calibrationData)
+void CalibrationEngine::CalibrateCameraExtrinsics( lens::ICamera* capture, CalibrationData* calibrationData )
 {
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
-  auto imagePoints = GrabCameraImagePoints(capture, 1);
+  auto imagePoints = GrabCameraImagePoints( *capture, 1 );
   // Calibrate for projector extrinsics
   CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
 }
 
-shared_ptr<CalibrationData> CalibrationEngine::CalibrateProjectorIntrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int requestedSamples)
+CalibrationData* CalibrationEngine::CalibrateProjectorIntrinsics(lens::ICamera* capture, IProjector* projector, int requestedSamples)
 {
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
-  auto imagePoints = GrabProjectorImagePoints( capture, projector, requestedSamples );
+  auto imagePoints = GrabProjectorImagePoints( *capture, *projector, requestedSamples );
   // Calibrate for projector intrinsics
   return CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth(), capture->getHeight( ) ) );
 }
 
-void CalibrationEngine::CalibrateProjectorExtrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, shared_ptr<CalibrationData> calibrationData)
+void CalibrationEngine::CalibrateProjectorExtrinsics(lens::ICamera* capture, IProjector* projector, CalibrationData* calibrationData)
 {
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
-  auto imagePoints = GrabProjectorImagePoints( capture, projector, 1 ); // Only using 1 since we are capturing for 1 view
+  auto imagePoints = GrabProjectorImagePoints( *capture, *projector, 1 ); // Only using 1 since we are capturing for 1 view
   // Calibrate for projector extrinsics
   CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
 }
 
-vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( shared_ptr<lens::ICamera> capture, int poses2Capture )
+vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( lens::ICamera& capture, int poses2Capture )
 {
 	int successes = 0;
 	bool found = false;
@@ -70,14 +70,14 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( shared_ptr
 	  while ( m_userWaitKey != cvWaitKey( 15 ) )
 	  {
 		// Just display to the user. They are setting up the calibration board
-		cv::Mat frame( capture->getFrame() );
+		cv::Mat frame( capture.getFrame() );
 		cv::drawChessboardCorners( frame, m_boardSize, cv::Mat( pointBuffer ), found );
 		display.ShowImage( frame );
 	  }
 
 	  // User is ready, try and find the circles
 	  pointBuffer.clear();
-	  cv::Mat colorFrame( capture->getFrame( ) );
+	  cv::Mat colorFrame( capture.getFrame( ) );
 	  cv::Mat gray;
 	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
 	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID, new cv::SimpleBlobDetector( detectorParams ) );
@@ -93,7 +93,7 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( shared_ptr
 	return imagePoints;
 }
 
-vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int poses2Capture )
+vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::ICamera& capture, IProjector& projector, int poses2Capture )
 {
   	int successes = 0;
 	bool found = false;
@@ -104,7 +104,7 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	detectorParams.minThreshold = 10.0f;
 	detectorParams.maxThreshold = 250.0f;
 
-	cv::Size projectorSize( projector->GetWidth( ), projector->GetHeight( ) );
+	cv::Size projectorSize( projector.GetWidth( ), projector.GetHeight( ) );
 
 	// Create a display to give the user some feedback
 	Display display("Calibration");
@@ -123,7 +123,7 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	  while ( m_userWaitKey != cvWaitKey( 15 ) )
 	  {
 		// Just display to the user. They are setting up the calibration board
-		cv::Mat frame( capture->getFrame() );
+		cv::Mat frame( capture.getFrame() );
 		cv::drawChessboardCorners( frame, m_boardSize, cv::Mat( pointBuffer ), found );
 		display.ShowImage( frame );
 	  }
@@ -133,11 +133,11 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 
 	  // Project a white image so that it is easier to see the calibration board
 	  cv::Mat whiteFrame( projectorSize, CV_8UC3, cv::Scalar(255,255,255));
-	  projector->ProjectImage(whiteFrame);
+	  projector.ProjectImage(whiteFrame);
 	  Sleep(200); // Give the projector time to project the image
 
 	  // Look for the calibration board
-	  cv::Mat colorFrame( capture->getFrame( ) );
+	  cv::Mat colorFrame( capture.getFrame( ) );
 	  cv::Mat gray;
 	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
 	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID, new cv::SimpleBlobDetector( detectorParams ) );
@@ -157,8 +157,6 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 		  projectorPointBuffer.push_back(cv::Point2f(
 			InterpolateProjectorPosition(Utils::SampleAt<float>(horizontalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70),
 			InterpolateProjectorPosition(Utils::SampleAt<float>(verticalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70)));
-			//InterpolateProjectorPosition(horizontalUnwrappedPhase.at<float>(pointBuffer[coord]), -1.8f, 70),
-			//InterpolateProjectorPosition(verticalUnwrappedPhase.at<float>(pointBuffer[coord]), -1.8f, 70)));
 		}
 
 		imagePoints.push_back(projectorPointBuffer);
@@ -166,19 +164,19 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(shared_p
 	  }
 
 	  // Project white again so we can see
-	  projector->ProjectImage(whiteFrame);
+	  projector.ProjectImage(whiteFrame);
 	} // End collection while loop
 
 	return imagePoints;
 }
 
-cv::Mat CalibrationEngine::ProjectAndCaptureUnwrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, IStructuredLight::FringeDirection direction)
+cv::Mat CalibrationEngine::ProjectAndCaptureUnwrappedPhase(lens::ICamera& capture, IProjector& projector, IStructuredLight::FringeDirection direction)
 {
   // TODO - How do we know that we want to use 5? (Settings File?)
   NFringeStructuredLight    	fringeGenerator(5);
   TwoWavelengthPhaseUnwrapper   phaseUnwrapper( 70, 75 );
   vector<cv::Mat>			    wrappedPhase;
-  cv::Size					    projectorSize( projector->GetWidth( ), projector->GetHeight( ) );
+  cv::Size					    projectorSize( projector.GetWidth( ), projector.GetHeight( ) );
 
   // TODO - How do we know that we want to use 70 and 75? (Settings File?)
   auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, direction);
@@ -190,9 +188,7 @@ cv::Mat CalibrationEngine::ProjectAndCaptureUnwrappedPhase(shared_ptr<lens::ICam
   return phaseUnwrapper.UnwrapPhase(wrappedPhase);
 }
 
-#include <highgui.h>
-
-cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, vector<cv::Mat> fringeImages)
+cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(lens::ICamera& capture, IProjector& projector, vector<cv::Mat> fringeImages)
 {
   vector<cv::Mat> capturedFringes;
   cv::Mat gray;
@@ -200,10 +196,9 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamer
   for(int patternNumber = 0; patternNumber < fringeImages.size(); ++patternNumber)
   {
 	auto ditheredImage = DitherImage(fringeImages[patternNumber]);	
-	projector->ProjectImage(ditheredImage);
-	Sleep(200); // Give the projector time to project the image
+	projector.ProjectImage(ditheredImage);
 	
-	cv::Mat colorFringe( capture->getFrame( ) );
+	cv::Mat colorFringe( capture.getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );
 	capturedFringes.push_back( gray.clone() );
   }
@@ -212,7 +207,7 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamer
   return phaseWrapper.WrapPhase(capturedFringes);
 }
 
-shared_ptr<CalibrationData> CalibrationEngine::CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize)
+CalibrationData* CalibrationEngine::CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize)
 {
   // Start with the identity and it will get refined from there
   cv::Mat distortionCoefficients = cv::Mat::zeros(5, 1, CV_64F);
@@ -226,14 +221,14 @@ shared_ptr<CalibrationData> CalibrationEngine::CalibrateView(vector<cv::Point3f>
 
   cv::calibrateCamera(objectPointList, imagePoints, viewSize, intrinsicMatrix, distortionCoefficients, rotationVectors, translationVectors, CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
 
-  auto calibrationData = make_shared<CalibrationData>( );
+  auto calibrationData = new CalibrationData( );
   calibrationData->SetDistortion(distortionCoefficients);
   calibrationData->SetIntrinsic(intrinsicMatrix);
   
   return calibrationData;
 }
 
-void CalibrationEngine::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, shared_ptr<CalibrationData> calibrationData)
+void CalibrationEngine::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData* calibrationData)
 {
   cv::Mat rotationVector = cv::Mat::zeros(3, 1, CV_64F);
   cv::Mat translationVector = cv::Mat::zeros(3, 1, CV_64F);

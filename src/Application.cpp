@@ -6,45 +6,79 @@
 #include <cv.h>
 #include <highgui.h>
 
+#include <QCoreApplication>
+#include <QTimer>
+
+#include <lens\config-lens.h>
 #include <lens\ICamera.h>
-#include <lens\PointGreyCamera.h>
 #include <lens\OpenCVCamera.h>
+
+// Now look for lens cameras to load
+#ifdef USE_FILE_CAMERA
+#include <lens\FileCamera.h>
+#endif
+
+#ifdef USE_IC_CAMERA
+#include <lens\ICCamera.h>
+#endif
+
+#ifdef USE_JAI_CAMERA
+#include <lens\JAICamera.h>
+#endif
+
+#ifdef USE_POINT_GREY_CAMERA
+#include <lens\PointGreyCamera.h>
+#endif
+
+#ifdef USE_PHANTOM_CAMERA
+#include <lens\PhantomCamera.h>
+#endif
 
 #include <reelblink\IProjector.h>
 #include <reelblink\LightCommanderProjector.h>
+
+#include <ScriptInterface.h>
 
 #include "JSSerializer.h"
 #include "CalibrationEngine.h"
 
 int main(int argc, char* argv[])
 {
-  const int intrinsicSamples = 12;
+  QCoreApplication app(argc, argv);
+  QCoreApplication::setOrganizationName("SL Studios");
+  QCoreApplication::setOrganizationDomain("SLStudios.org");
+  QCoreApplication::setApplicationName("PortalCalibration");
 
-  // Setup the camera
-  auto camera = shared_ptr<lens::PointGreyCamera>( new lens::PointGreyCamera() );
-  Utils::AssertOrThrowIfFalse( nullptr != camera, "Unable to create the camera object" );
-  Utils::AssertOrThrowIfFalse( camera->open( ), "Unable to initialize the camera" );
-	
-  auto projector = shared_ptr<LightCommanderProjector>( new LightCommanderProjector( ) );
-  Utils::AssertOrThrowIfFalse( nullptr != projector, "Unable to create the projector object" );
-  Utils::AssertOrThrowIfFalse( projector->Init(), "Unable to intialize the projector" );
+  ScriptInterface scriptInterface;
+
+  // Add our types
+  scriptInterface.AddObjectType<LightCommanderProjector>( "LightCommanderProjector" );
+  scriptInterface.AddObjectType<CalibrationData>( "CalibrationData" );
+  scriptInterface.AddObjectType<JSSerializer, QString>( "JSSerializer" );
+  scriptInterface.AddObjectType<CalibrationEngine, int, int, float>( "CalibrationEngine" );
   
-  // Setup the calibration engine
-  CalibrationEngine calibrationEngine(11, 4, 10.0f);
-  
-  // Calibrate intrinsics for the camera and projector
-  auto projectorCalibration = calibrationEngine.CalibrateProjectorIntrinsics(camera, projector, intrinsicSamples);
-  auto cameraCalibration = calibrationEngine.CalibrateCameraIntrinsics(camera, intrinsicSamples);
+  // Add our camera types
+  scriptInterface.AddObjectType<lens::OpenCVCamera>( "OpenCVCamera" );
+  #ifdef USE_FILE_CAMERA
+  scriptInterface.AddObjectType<lens::FileCamera>( "FileCamera" );
+  #endif
+  #ifdef USE_IC_CAMERA
+  scriptInterface.AddObjectType<lens::ICCamera>( "ICCamera" );
+  #endif
+  #ifdef USE_JAI_CAMERA
+  scriptInterface.AddObjectType<lens::JAICamera>( "JAICamera" );
+  #endif
+  #ifdef USE_POINT_GREY_CAMERA
+  scriptInterface.AddObjectType<lens::PointGreyCamera>( "PointGreyCamera" );
+  #endif
+  #ifdef USE_PHANTOM_CAMERA
+  scriptInterface.AddObjectType<lens::PhantomCamera>( "PhantomCamera" );
+  #endif
 
-  // Calibrate extrinsics for the camera and projector
-  calibrationEngine.CalibrateProjectorExtrinsics(camera, projector, projectorCalibration);
-  calibrationEngine.CalibrateCameraExtrinsics(camera, cameraCalibration);
+  // Register types we want to pass around
+  scriptInterface.RegisterMetaObjectType<CalibrationData>( );
 
-  JSSerializer projectorSerializer("ProjectorCalibration.js");
-  JSSerializer cameraSerializer("CameraCalibration.js");
-
-  projectorSerializer.Serialize( projectorCalibration );
-  cameraSerializer.Serialize( cameraCalibration );
+  scriptInterface.RunScript("Calibrate.js");
 
   return 0;
 }

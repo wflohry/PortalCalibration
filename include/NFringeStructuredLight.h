@@ -31,6 +31,7 @@ private:
   const unsigned int m_numberOfFringes;
 
 public:
+  NFringeStructuredLight( );
   NFringeStructuredLight(unsigned int numberOfFringes);
   
   vector<cv::Mat> GenerateFringe( const cv::Size fringeSize, const int pitch, FringeDirection direction );

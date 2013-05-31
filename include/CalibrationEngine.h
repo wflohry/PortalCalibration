@@ -7,14 +7,15 @@
 #include <memory>
 #include <iostream>
 #include <math.h>
-
 #include <stdio.h>
 #include <stdlib.h>
-
 
 // OpenCV includes
 #include <cv.h>
 #include <highgui.h>
+
+// QT includes
+#include <QObject>
 
 // Camera Library includes
 #include <lens\ICamera.h>
@@ -27,8 +28,10 @@
 
 using namespace std;
 
-class CalibrationEngine
+class CalibrationEngine : public QObject
 {
+  Q_OBJECT
+
 private:
   static const int m_userWaitKey = 13;
   
@@ -38,23 +41,25 @@ private:
 
 public:
 	CalibrationEngine(const int boardWidth, const int boardHeight, const float markerSize);
-	shared_ptr<CalibrationData> CalibrateCameraIntrinsics(shared_ptr<lens::ICamera> capture, const int requestedSamples);
-	void						CalibrateCameraExtrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<CalibrationData> calibrationData);
-	shared_ptr<CalibrationData> CalibrateProjectorIntrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, const int requestedSamples);
-	void						CalibrateProjectorExtrinsics(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, shared_ptr<CalibrationData> calibrationData);
+
+public slots:
+	CalibrationData* CalibrateCameraIntrinsics(lens::ICamera* capture, const int requestedSamples);
+	void			 CalibrateCameraExtrinsics(lens::ICamera* capture, CalibrationData* calibrationData);
+	CalibrationData* CalibrateProjectorIntrinsics(lens::ICamera* capture, IProjector* projector, const int requestedSamples);
+	void			 CalibrateProjectorExtrinsics(lens::ICamera* capture, IProjector* projector, CalibrationData* calibrationData);
 
 private:
 	// Used for aquiring the data for calibration
-	vector<vector<cv::Point2f>> GrabCameraImagePoints(shared_ptr<lens::ICamera> capture, int poses2Capture );
-	vector<vector<cv::Point2f>> GrabProjectorImagePoints(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, int poses2Capture );
+	vector<vector<cv::Point2f>> GrabCameraImagePoints(lens::ICamera& capture, int poses2Capture );
+	vector<vector<cv::Point2f>> GrabProjectorImagePoints(lens::ICamera& capture, IProjector& projector, int poses2Capture );
 	
-	cv::Mat ProjectAndCaptureUnwrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, IStructuredLight::FringeDirection direction);
-	cv::Mat ProjectAndCaptureWrappedPhase(shared_ptr<lens::ICamera> capture, shared_ptr<IProjector> projector, vector<cv::Mat> fringeImages);
+	cv::Mat ProjectAndCaptureUnwrappedPhase(lens::ICamera& capture, IProjector& projector, IStructuredLight::FringeDirection direction);
+	cv::Mat ProjectAndCaptureWrappedPhase(lens::ICamera& capture, IProjector& projector, vector<cv::Mat> fringeImages);
 	vector<cv::Point3f> CalculateObjectPoints();
 
 	// Used for the actual calibration
-	shared_ptr<CalibrationData> CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize);
-	void CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, shared_ptr<CalibrationData> calibrationData);
+	CalibrationData* CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize);
+	void CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, CalibrationData* calibrationData);
 
 	cv::Mat DitherImage(const cv::Mat originalImage);
 	float InterpolateProjectorPosition(float phi, float phi0, int pitch);

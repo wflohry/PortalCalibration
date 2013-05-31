@@ -1,29 +1,29 @@
 #include "JSSerializer.h"
 
-JSSerializer::JSSerializer(string filename) : m_filename( filename )
+JSSerializer::JSSerializer(QString filename) : m_filename( filename )
 { }
 
-bool JSSerializer::Serialize( shared_ptr<CalibrationData> calibrationData )
+bool JSSerializer::Serialize( CalibrationData& calibrationData )
 {
   ofstream jsFile;
-  jsFile.open( m_filename, ios::out | ios::app ); 
+  jsFile.open( m_filename.toStdString( ), ios::out | ios::app ); 
 
   if( !jsFile.is_open() )
 	{ return false; } // Unable to open the file
 
   // Output intrinsic calibration
   jsFile << "this.Intrinsic = [";
-  _SerializeMatrix( jsFile, calibrationData->GetIntrinsic( ) );
+  _SerializeMatrix( jsFile, calibrationData.GetIntrinsic( ) );
   jsFile << "]; \n";
 
   // Output distortion coefficients
   jsFile << "this.Distortion = [";
-  _SerializeMatrix( jsFile, calibrationData->GetDistortion( ) );
+  _SerializeMatrix( jsFile, calibrationData.GetDistortion( ) );
   jsFile << "]; \n";
 
   // Finally output extrinsic calibration
   jsFile << "this.Extrinsic = [";
-  _SerializeMatrix( jsFile, calibrationData->GetExtrinsic( ) );
+  _SerializeMatrix( jsFile, calibrationData.GetExtrinsic( ) );
   jsFile << "]; \n";
 
   jsFile.close( );

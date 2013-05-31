@@ -9,22 +9,16 @@ CalibrationData::CalibrationData( void )
 }
 
 void CalibrationData::SetIntrinsic( const cv::Mat& intrinsicMatrix )
-{
-  m_intrinsicMatrix = intrinsicMatrix;
-}
+  { m_intrinsicMatrix = intrinsicMatrix; }
 
 void CalibrationData::SetDistortion( const cv::Mat& distortionCoefficients )
-{
-  m_distortionCoefficients = distortionCoefficients;
-}
+  { m_distortionCoefficients = distortionCoefficients; }
 
 void CalibrationData::SetRotationMatrix( const cv::Mat& rotationMatrix )
 {
   // The first 3 columns should be equal to the rotation transformation
   for(int col = 0; col < 3; ++col)
-  {
-	rotationMatrix.col( col ).copyTo( m_extrinsicMatrix.col( col ) );
-  }
+	{ rotationMatrix.col( col ).copyTo( m_extrinsicMatrix.col( col ) ); }
 }
 
 void CalibrationData::SetRotationVector( const cv::Mat& rotationVector )
@@ -42,16 +36,10 @@ void CalibrationData::SetTranslationVector( const cv::Mat& translationVector )
 }
 
 const cv::Mat& CalibrationData::GetIntrinsic( )
-{
-  return m_intrinsicMatrix;
-}
+  { return m_intrinsicMatrix; }
 
 const cv::Mat& CalibrationData::GetDistortion( )
-{
-  return m_distortionCoefficients;
-}
+  { return m_distortionCoefficients; }
 
 const cv::Mat& CalibrationData::GetExtrinsic( )
-{
-  return m_extrinsicMatrix;
-}
+  { return m_extrinsicMatrix; }

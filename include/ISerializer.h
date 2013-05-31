@@ -1,16 +1,18 @@
 #ifndef _H_PORTAL_CALIBRATION_I_SERIALIZER_
 #define _H_PORTAL_CALIBRATION_I_SERIALIZER_
 
-#include <memory>
+#include <QObject>
 
 #include "CalibrationData.h"
 
 using namespace std;
 
-class ISerializer
+class ISerializer : public QObject
 {
-public:
-  virtual bool Serialize(shared_ptr<CalibrationData> calibrationData) = 0;
+  Q_OBJECT
+
+public slots:
+  virtual bool Serialize(CalibrationData& calibrationData) = 0;
 };
 
 #endif // _H_PORTAL_CALIBRATION_I_SERIALIZER_
