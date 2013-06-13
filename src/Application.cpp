@@ -2,6 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// ReelBlink includes
+// Have to include lightcrafter first as it includes winsock2 
+// which must be included before windows.h
+#include <reelblink\TiLightCrafter\LightCrafter.h> 
+#include <reelblink\LightCommanderProjector.h>
+
 // OpenCV includes
 #include <cv.h>
 #include <highgui.h>
@@ -34,9 +40,6 @@
 #include <lens\PhantomCamera.h>
 #endif
 
-#include <reelblink\IProjector.h>
-#include <reelblink\LightCommanderProjector.h>
-
 #include <ScriptInterface.h>
 
 #include "JSSerializer.h"
@@ -52,6 +55,7 @@ int main(int argc, char* argv[])
   ScriptInterface scriptInterface;
 
   // Add our types
+  scriptInterface.AddObjectType<LightCrafter>( "LightCrafterProjector" );
   scriptInterface.AddObjectType<LightCommanderProjector>( "LightCommanderProjector" );
   scriptInterface.AddObjectType<CalibrationData>( "CalibrationData" );
   scriptInterface.AddObjectType<JSSerializer, QString>( "JSSerializer" );
