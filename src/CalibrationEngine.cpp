@@ -120,6 +120,11 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::IC
 	  message << poses2Capture;
 	  display.OverlayText( message.str() );
 
+	  // Project a white image so that it is easier to see the calibration board
+	  cv::Mat whiteFrame( projectorSize, CV_8UC3, cv::Scalar(255,255,255));
+	  projector.ProjectImage(whiteFrame);
+	  Sleep(200); // Give the projector time to project the image
+
 	  while ( m_userWaitKey != cvWaitKey( 15 ) )
 	  {
 		// Just display to the user. They are setting up the calibration board
@@ -130,11 +135,6 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::IC
 
 	  // User is ready, try and find the circles
 	  pointBuffer.clear();
-
-	  // Project a white image so that it is easier to see the calibration board
-	  cv::Mat whiteFrame( projectorSize, CV_8UC3, cv::Scalar(255,255,255));
-	  projector.ProjectImage(whiteFrame);
-	  Sleep(200); // Give the projector time to project the image
 
 	  // Look for the calibration board
 	  cv::Mat colorFrame( capture.getFrame( ) );
