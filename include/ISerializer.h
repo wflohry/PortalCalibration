@@ -12,7 +12,7 @@ class ISerializer : public QObject
   Q_OBJECT
 
 public slots:
-  virtual bool Serialize(CalibrationData& calibrationData) = 0;
+  virtual bool Serialize(CalibrationData* calibrationData) = 0;
 };
 
 #endif // _H_PORTAL_CALIBRATION_I_SERIALIZER_

@@ -21,7 +21,7 @@ public:
   JSSerializer(QString filename);
 
 public slots:
-  bool Serialize(CalibrationData& calibrationData);
+  bool Serialize(CalibrationData* calibrationData);
 
 private:
   void _SerializeMatrix(ofstream& jsFile, const cv::Mat& matrix2Serialize);

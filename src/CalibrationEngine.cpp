@@ -49,9 +49,14 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( lens::ICam
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
 	cv::SimpleBlobDetector::Params detectorParams;
-	detectorParams.blobColor	= 255;
-	detectorParams.minThreshold = 10.0f;
-	detectorParams.maxThreshold = 250.0f;
+	detectorParams.filterByCircularity = false;
+	detectorParams.filterByColor       = true;
+
+	detectorParams.blobColor	 = 255;
+
+	detectorParams.minThreshold  = 2.0f;
+	detectorParams.maxThreshold  = 250.0f;
+	detectorParams.thresholdStep = 2.0f;
 
 	// Create a display to give the user some feedback
 	Display display("Calibration");
@@ -100,9 +105,14 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::IC
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
 	cv::SimpleBlobDetector::Params detectorParams;
-	detectorParams.blobColor	= 255;
-	detectorParams.minThreshold = 10.0f;
-	detectorParams.maxThreshold = 250.0f;
+	detectorParams.filterByCircularity = false;
+	detectorParams.filterByColor       = true;
+
+	detectorParams.blobColor	 = 255;
+
+	detectorParams.minThreshold  = 2.0f;
+	detectorParams.maxThreshold  = 250.0f;
+	detectorParams.thresholdStep = 2.0f;
 
 	cv::Size projectorSize( projector.GetWidth( ), projector.GetHeight( ) );
 

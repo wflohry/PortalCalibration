@@ -3,8 +3,11 @@
 JSSerializer::JSSerializer(QString filename) : m_filename( filename )
 { }
 
-bool JSSerializer::Serialize( CalibrationData& calibrationData )
+bool JSSerializer::Serialize( CalibrationData* calibrationData )
 {
+  if(nullptr == calibrationData)
+	{ return false; }
+
   ofstream jsFile;
   jsFile.open( m_filename.toStdString( ), ios::out | ios::app ); 
 
@@ -13,17 +16,17 @@ bool JSSerializer::Serialize( CalibrationData& calibrationData )
 
   // Output intrinsic calibration
   jsFile << "this.Intrinsic = [";
-  _SerializeMatrix( jsFile, calibrationData.GetIntrinsic( ) );
+  _SerializeMatrix( jsFile, calibrationData->GetIntrinsic( ) );
   jsFile << "]; \n";
 
   // Output distortion coefficients
   jsFile << "this.Distortion = [";
-  _SerializeMatrix( jsFile, calibrationData.GetDistortion( ) );
+  _SerializeMatrix( jsFile, calibrationData->GetDistortion( ) );
   jsFile << "]; \n";
 
   // Finally output extrinsic calibration
   jsFile << "this.Extrinsic = [";
-  _SerializeMatrix( jsFile, calibrationData.GetExtrinsic( ) );
+  _SerializeMatrix( jsFile, calibrationData->GetExtrinsic( ) );
   jsFile << "]; \n";
 
   jsFile.close( );
