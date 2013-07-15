@@ -178,10 +178,10 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::IC
 		  for(int coord = 0; coord < pointBuffer.size( ); ++coord)
 		  {
 			// Use the horizontal unwrapped phase to get the x and vertical for y
-			// TODO - -1.8 is not correct
+			NFringeStructuredLight fringeGenerator(5);
 			projectorPointBuffer.push_back(cv::Point2f(
-			  InterpolateProjectorPosition(Utils::SampleAt<float>(horizontalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70),
-			  InterpolateProjectorPosition(Utils::SampleAt<float>(verticalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70)));
+			  InterpolateProjectorPosition(Utils::SampleAt<float>(horizontalUnwrappedPhase, pointBuffer[coord]), fringeGenerator.GetPhi0( 70 ), 70),
+			  InterpolateProjectorPosition(Utils::SampleAt<float>(verticalUnwrappedPhase, pointBuffer[coord]), fringeGenerator.GetPhi0( 70 ), 70)));
 		  }
 
 		  imagePoints.push_back(projectorPointBuffer);
@@ -212,8 +212,8 @@ cv::Mat CalibrationEngine::ProjectAndCaptureUnwrappedPhase(lens::ICamera& captur
   auto smallWavelength = fringeGenerator.GenerateFringe(projectorSize, 70, direction);
   wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, smallWavelength ) );
 
-	auto largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, direction);
-	wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
+  auto largerWavelength = fringeGenerator.GenerateFringe(projectorSize, 75, direction);
+  wrappedPhase.push_back( ProjectAndCaptureWrappedPhase( capture, projector, largerWavelength ) );
 
   return phaseUnwrapper.UnwrapPhase(wrappedPhase);
 }
