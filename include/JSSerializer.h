@@ -7,6 +7,7 @@
 #include <QString>
 
 #include "ISerializer.h"
+#include "ScriptInterface.h"
 
 using namespace std;
 
@@ -18,7 +19,7 @@ private:
   const QString m_filename;
 
 public:
-  JSSerializer(QString filename);
+  JSSerializer( QString filename );
 
 public slots:
   bool Serialize(CalibrationData* calibrationData);

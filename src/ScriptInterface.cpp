@@ -21,13 +21,18 @@ void ScriptInterface::PopThis( void )
   m_scriptEngine.popContext( );
 }
 
+void ScriptInterface::AddObject(QObject& object, QString name)
+{
+  QScriptValue value = m_scriptEngine.newQObject(&object, QScriptEngine::QtOwnership, QScriptEngine::AutoCreateDynamicProperties);
+  m_scriptEngine.globalObject().setProperty(name, value);
+}
+
 void ScriptInterface::RunScript(QString filename)
 {
   QFile scriptFile(filename);
   if ( !scriptFile.open( QIODevice::ReadOnly ) )
   {
-	//TODO: Log an error
-	//wrench::Logger::logError( "Unable to load script file %s", filename.toLocal8Bit().data() ); 
+	cout << "Unable to load script file " << filename.toLocal8Bit().data() << endl; 
 	return;
   }
   QTextStream stream(&scriptFile);
@@ -40,7 +45,14 @@ void ScriptInterface::RunScript(QString filename)
   {
 	int line = m_scriptEngine.uncaughtExceptionLineNumber();
 	auto exception = m_scriptEngine.uncaughtException();
-	//TODO: Log an error
-	//wrench::Logger::logError( "Uncaught exception at line: %d %s", line, result.toString().toLocal8Bit().data() );
+	cout << "Uncaught exception at line: " << line << " " << exception.toString().toLocal8Bit().data() << endl;
   }
+}
+
+void ScriptInterface::RunScript( QObject* obj, QString filename )
+{
+  QScriptContext* context = m_scriptEngine.pushContext( );
+  context->setThisObject( m_scriptEngine.toScriptValue( obj ) );
+  RunScript( filename );
+  PopThis( );
 }

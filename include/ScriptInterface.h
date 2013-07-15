@@ -24,7 +24,7 @@ class ScriptInterface : public QObject
   Q_OBJECT
 
 private:
-  QScriptValue						m_global;
+  QScriptValue	m_global;
 
   QScriptEngine m_scriptEngine;
   
@@ -33,6 +33,8 @@ public:
   
   void PushThis( QString thisName );
   void PopThis( void );
+
+  void AddObject( QObject& object, QString name );
 
   template <typename objectType>
 	void		AddObjectType( QString name )
@@ -67,7 +69,8 @@ public:
   { qScriptRegisterMetaType( &m_scriptEngine, ScriptInterface::Object2ScriptValue<objectType>, ScriptInterface::ScriptValue2Object<objectType> ); }
 
 public slots:
-  void			RunScript(QString filename);
+  void RunScript( QString filename );
+  void RunScript( QObject* obj, QString filename );
 
 private:
   template <typename objectType>

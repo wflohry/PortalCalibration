@@ -1,6 +1,6 @@
 #include "JSSerializer.h"
 
-JSSerializer::JSSerializer(QString filename) : m_filename( filename )
+JSSerializer::JSSerializer( QString filename ) : m_filename( filename )
 { }
 
 bool JSSerializer::Serialize( CalibrationData* calibrationData )
@@ -9,7 +9,7 @@ bool JSSerializer::Serialize( CalibrationData* calibrationData )
 	{ return false; }
 
   ofstream jsFile;
-  jsFile.open( m_filename.toStdString( ), ios::out | ios::app ); 
+  jsFile.open( m_filename.toStdString( ), ios::out | ios::trunc ); 
 
   if( !jsFile.is_open() )
 	{ return false; } // Unable to open the file

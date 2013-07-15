@@ -5,6 +5,7 @@
 
 // Standard C++ includes
 #include <memory>
+#include <functional>
 #include <iostream>
 #include <math.h>
 #include <stdio.h>
@@ -34,7 +35,9 @@ class CalibrationEngine : public QObject
 
 private:
   static const int m_userWaitKey = 13;
-  
+  static const int m_userAcceptKey = 13;
+  static const int m_userDenyKey = 32;
+
   const cv::Size m_boardSize;
   const int m_boardMarkerCount;
   const float m_markerDiameter;
@@ -52,7 +55,8 @@ private:
 	// Used for aquiring the data for calibration
 	vector<vector<cv::Point2f>> GrabCameraImagePoints(lens::ICamera& capture, int poses2Capture );
 	vector<vector<cv::Point2f>> GrabProjectorImagePoints(lens::ICamera& capture, IProjector& projector, int poses2Capture );
-	
+	//vector<vector<cv::Point2f>> GrabImagePoints(lens::ICamera& capture, int poses2Capture, std::function<void(vector<vector<cv::Point2f>>&)> );
+
 	cv::Mat ProjectAndCaptureUnwrappedPhase(lens::ICamera& capture, IProjector& projector, IStructuredLight::FringeDirection direction);
 	cv::Mat ProjectAndCaptureWrappedPhase(lens::ICamera& capture, IProjector& projector, vector<cv::Mat> fringeImages);
 	vector<cv::Point3f> CalculateObjectPoints();

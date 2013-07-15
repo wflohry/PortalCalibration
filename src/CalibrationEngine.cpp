@@ -48,15 +48,6 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( lens::ICam
 	bool found = false;
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
-	cv::SimpleBlobDetector::Params detectorParams;
-	detectorParams.filterByCircularity = false;
-	detectorParams.filterByColor       = true;
-
-	detectorParams.blobColor	 = 255;
-
-	detectorParams.minThreshold  = 2.0f;
-	detectorParams.maxThreshold  = 250.0f;
-	detectorParams.thresholdStep = 2.0f;
 
 	// Create a display to give the user some feedback
 	Display display("Calibration");
@@ -85,13 +76,32 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( lens::ICam
 	  cv::Mat colorFrame( capture.getFrame( ) );
 	  cv::Mat gray;
 	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
-	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID, new cv::SimpleBlobDetector( detectorParams ) );
+	  // CALIB_CB_CLUSTERING is used to help reduce problems due to perspective distortions
+	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING, Utils::NewMarkerDetector( ) );
 
 	  // Make sure we found it, and that we found all the points
 	  if(found && pointBuffer.size() == m_boardMarkerCount)
 	  {
-		imagePoints.push_back(pointBuffer);
-		++successes;
+		cv::drawChessboardCorners( colorFrame, m_boardSize, cv::Mat( pointBuffer ), found );
+
+		int key;
+		do
+		{
+		  // Just display to the user. They are setting up the calibration board
+		  display.OverlayText( "Press enter to accept, space to deny" );
+		  display.ShowImage( colorFrame );
+		  key = cvWaitKey( 15 );
+		} while( m_userAcceptKey != key && m_userDenyKey != key);
+
+		if( m_userAcceptKey == key )
+		{
+		  imagePoints.push_back(pointBuffer);
+		  ++successes;
+		}
+		else
+		{
+		  found = false;
+		}
 	  }
 	} // End collection while loop
 
@@ -104,15 +114,6 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::IC
 	bool found = false;
 	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
-	cv::SimpleBlobDetector::Params detectorParams;
-	detectorParams.filterByCircularity = false;
-	detectorParams.filterByColor       = true;
-
-	detectorParams.blobColor	 = 255;
-
-	detectorParams.minThreshold  = 2.0f;
-	detectorParams.maxThreshold  = 250.0f;
-	detectorParams.thresholdStep = 2.0f;
 
 	cv::Size projectorSize( projector.GetWidth( ), projector.GetHeight( ) );
 
@@ -150,27 +151,46 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::IC
 	  cv::Mat colorFrame( capture.getFrame( ) );
 	  cv::Mat gray;
 	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
-	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID, new cv::SimpleBlobDetector( detectorParams ) );
+	  // CALIB_CB_CLUSTERING is used to help reduce problems due to perspective distortions
+	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING , Utils::NewMarkerDetector( ) );
 
 	  // Make sure we found it, and that we found all the points
 	  if(found && pointBuffer.size() == m_boardMarkerCount)
 	  {
-		// We found all the markers in the camera view. Now we need to image with the projector		
-		auto horizontalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, projector, IStructuredLight::Horizontal);
-		auto verticalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, projector, IStructuredLight::Vertical);
+		cv::drawChessboardCorners( colorFrame, m_boardSize, cv::Mat( pointBuffer ), found );
 
-		vector< cv::Point2f > projectorPointBuffer;
-		for(int coord = 0; coord < pointBuffer.size( ); ++coord)
+		int key;
+		do
 		{
-		  // Use the horizontal unwrapped phase to get the x and vertical for y
-		  // TODO - -1.8 is not correct
-		  projectorPointBuffer.push_back(cv::Point2f(
-			InterpolateProjectorPosition(Utils::SampleAt<float>(horizontalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70),
-			InterpolateProjectorPosition(Utils::SampleAt<float>(verticalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70)));
-		}
+		  // Just display to the user. They are setting up the calibration board
+		  display.OverlayText( "Press enter to accept, space to deny" );
+		  display.ShowImage( colorFrame );
+		  key = cvWaitKey( 15 );
+		} while( m_userAcceptKey != key && m_userDenyKey != key);
 
-		imagePoints.push_back(projectorPointBuffer);
-		++successes;
+		if( m_userAcceptKey == key )
+		{
+		  // We found all the markers in the camera view. Now we need to image with the projector		
+		  auto horizontalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, projector, IStructuredLight::Horizontal);
+		  auto verticalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, projector, IStructuredLight::Vertical);
+
+		  vector< cv::Point2f > projectorPointBuffer;
+		  for(int coord = 0; coord < pointBuffer.size( ); ++coord)
+		  {
+			// Use the horizontal unwrapped phase to get the x and vertical for y
+			// TODO - -1.8 is not correct
+			projectorPointBuffer.push_back(cv::Point2f(
+			  InterpolateProjectorPosition(Utils::SampleAt<float>(horizontalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70),
+			  InterpolateProjectorPosition(Utils::SampleAt<float>(verticalUnwrappedPhase, pointBuffer[coord]), -1.8f, 70)));
+		  }
+
+		  imagePoints.push_back(projectorPointBuffer);
+		  ++successes;
+		}
+		else
+		{
+		  found = false;
+		}
 	  }
 
 	  // Project white again so we can see
@@ -205,7 +225,7 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(lens::ICamera& capture,
 
   for(int patternNumber = 0; patternNumber < fringeImages.size(); ++patternNumber)
   {
-	auto ditheredImage = DitherImage(fringeImages[patternNumber]);	
+	auto ditheredImage = Utils::DitherImage(fringeImages[patternNumber]);	
 	projector.ProjectImage(ditheredImage);
 	
 	cv::Mat colorFringe( capture.getFrame( ) );
@@ -229,7 +249,8 @@ CalibrationData* CalibrationEngine::CalibrateView(vector<cv::Point3f> objectPoin
   for(int i = 0; i < imagePoints.size(); ++i)
 	{ objectPointList.push_back(objectPoints); }
 
-  cv::calibrateCamera(objectPointList, imagePoints, viewSize, intrinsicMatrix, distortionCoefficients, rotationVectors, translationVectors, CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
+  double reprojectError = cv::calibrateCamera(objectPointList, imagePoints, viewSize, intrinsicMatrix, distortionCoefficients, rotationVectors, translationVectors, CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
+  std::cout << "Reprojection error: " << reprojectError << std::endl;
 
   auto calibrationData = new CalibrationData( );
   calibrationData->SetDistortion(distortionCoefficients);
@@ -243,7 +264,7 @@ void CalibrationEngine::CalibrateExtrinsic(vector<cv::Point3f> objectPoints, vec
   cv::Mat rotationVector = cv::Mat::zeros(3, 1, CV_64F);
   cv::Mat translationVector = cv::Mat::zeros(3, 1, CV_64F);
 
-  cv::solvePnPRansac(objectPoints, imagePoints[0], calibrationData->GetIntrinsic(), calibrationData->GetDistortion(), rotationVector, translationVector);
+  cv::solvePnP(objectPoints, imagePoints[0], calibrationData->GetIntrinsic(), calibrationData->GetDistortion(), rotationVector, translationVector);
   
   calibrationData->SetRotationVector(rotationVector);
   calibrationData->SetTranslationVector(translationVector);
@@ -265,39 +286,6 @@ vector<cv::Point3f> CalibrationEngine::CalculateObjectPoints()
   }
 
   return objectPoints;
-}
-
-cv::Mat CalibrationEngine::DitherImage(const cv::Mat originalImage)
-{
-  // TODO - This only works for a single channel image.
-  // TODO - Does this belong here or an ImageUtils class
-  cv::Mat ditheredImage = originalImage.clone();
-
-  for( int row = 0; row < originalImage.rows; ++row )
-  {
-	for( int col = 0; col < originalImage.cols; ++col )
-	{
-	  // Quantize to binary
-	  ditheredImage.at<uchar>(row, col) = ditheredImage.at<uchar>(row, col) > 128 ? 255 : 0;
-
-	  // Diffuse quantization error
-	  float quantizationError = originalImage.at<uchar>(row, col) - ditheredImage.at<uchar>(row, col);
-	  if(col+1 < originalImage.cols)
-		{ ditheredImage.at<uchar>(row,col+1) = Utils::ClampPixel(ditheredImage.at<uchar>(row,col+1) + (7.0/16.0) * quantizationError); }
-	  
-	  if(row+1 < originalImage.rows)
-	  {
-		if(col-1 >= 0)
-		  { ditheredImage.at<uchar>(row+1,col-1) = Utils::ClampPixel(ditheredImage.at<uchar>(row+1,col-1) + (3.0/16.0) * quantizationError); }
-		if(col+1 < originalImage.cols)
-		  { ditheredImage.at<uchar>(row+1,col+1) = Utils::ClampPixel(ditheredImage.at<uchar>(row+1,col+1) + (1.0/16.0) * quantizationError); }
-
-		ditheredImage.at<uchar>(row+1,col) = Utils::ClampPixel(ditheredImage.at<uchar>(row+1,col) + (5.0/16.0) * quantizationError);		
-	  }
-	}
-  }
-
-  return ditheredImage;
 }
 
 float CalibrationEngine::InterpolateProjectorPosition(float phi, float phi0, int pitch)

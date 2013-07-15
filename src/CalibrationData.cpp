@@ -43,3 +43,102 @@ const cv::Mat& CalibrationData::GetDistortion( )
 
 const cv::Mat& CalibrationData::GetExtrinsic( )
   { return m_extrinsicMatrix; }
+
+void CalibrationData::SetIntrinsic(QVariantList intrinsicMatrixList)
+{
+  if( 9 != intrinsicMatrixList.count( ) )
+  {
+	std::cout << "Invalid number of intrinsic matrix coefficients specified" << std::endl;
+	return;
+  }
+
+  cv::Mat intrinsic = cv::Mat::eye(3, 3, CV_64F);
+  for( int valueLoc = 0; valueLoc < intrinsicMatrixList.count(); ++valueLoc )
+  {
+	if( !intrinsicMatrixList[valueLoc].canConvert<float>( ) )
+	{
+	  std::cout << "Invalid intrinsic matrix coefficient type specified" << std::endl;
+	  return;
+	}
+	intrinsic.at<double>( valueLoc / 3, valueLoc % 3 ) = intrinsicMatrixList[valueLoc].toFloat( );
+  }
+
+  // Set here incase there was an error. We don't want partial matricies
+  m_intrinsicMatrix = intrinsic;
+}
+
+QVariantList CalibrationData::GetIntrinsicAsVariant( void )
+{
+  return Mat2VariantList( m_intrinsicMatrix );
+}
+
+void CalibrationData::SetDistortion(QVariantList coefficients)
+{
+  if( 5 != coefficients.count( ) )
+  {
+	std::cout << "Invalid number of distortion coefficients specified" << std::endl;
+	return;
+  }
+
+  cv::Mat distortion = cv::Mat::zeros(5, 1, CV_64F);
+  for( int coeffNum = 0; coeffNum < coefficients.count(); ++coeffNum )
+  {
+	if( !coefficients[coeffNum].canConvert<float>( ) )
+	{
+	  std::cout << "Invalid distortion coefficient type specified" << std::endl;
+	  return;
+	}
+	distortion.at<double>( coeffNum ) = coefficients[coeffNum].toFloat( );
+  }
+
+  // Set here incase there was an error. We don't want partial matricies
+  m_distortionCoefficients = distortion;
+}
+
+QVariantList CalibrationData::GetDistortionAsVariant( void )
+{
+  return Mat2VariantList( m_distortionCoefficients );
+}
+
+void CalibrationData::SetExtrinsic(QVariantList extrinsicMatrixList)
+{
+  if( 12 != extrinsicMatrixList.count() )
+  {
+    std::cout << "Invalid number of extrinsic matrix coefficients specified" << std::endl;
+	return;
+  }
+
+  cv::Mat extrinsic	= cv::Mat::eye(3, 4, CV_64F);
+  for( int valueLoc = 0; valueLoc < extrinsicMatrixList.count(); ++valueLoc )
+  {
+	if (!extrinsicMatrixList[valueLoc].canConvert<float>( ) )
+	{
+	  std::cout << "Invalid extrinsic matrix coefficient type specified" << std::endl;
+	  return;
+	}
+	extrinsic.at<double>( valueLoc / 4, valueLoc % 4 ) = extrinsicMatrixList[valueLoc].toFloat( );
+  }
+
+  // Set here incase there was an error. We don't want partial matricies
+  m_extrinsicMatrix = extrinsic;
+}
+
+QVariantList CalibrationData::GetExtrinsicAsVariant( void )
+{
+  return Mat2VariantList( m_extrinsicMatrix );
+}
+
+QVariantList CalibrationData::Mat2VariantList( cv::Mat mat )
+{
+  auto variantMatrix = QVariantList();
+
+  for(int row = 0; row < mat.rows; ++row)
+  {
+	for(int col = 0; col < mat.cols; ++col)
+	{
+	  variantMatrix.push_back( QVariant( mat.at<double>( row, col ) ) );
+  	}
+  }
+
+  return variantMatrix;
+}

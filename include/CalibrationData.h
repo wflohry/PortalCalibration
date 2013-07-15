@@ -3,6 +3,7 @@
 
 // Standard C++ includes
 #include <memory>
+#include <iostream>
 
 // OpenCV includes
 #include <cv.h>
@@ -10,10 +11,14 @@
 // QT includes
 #include <QObject>
 #include <QMetaType>
+#include <QVariant>
 
 class CalibrationData : public QObject
 {
   Q_OBJECT
+  Q_PROPERTY( QVariantList Distortion WRITE SetDistortion READ GetDistortionAsVariant )
+  Q_PROPERTY( QVariantList Extrinsic WRITE SetExtrinsic READ GetExtrinsicAsVariant )
+  Q_PROPERTY( QVariantList Intrinsic WRITE SetIntrinsic READ GetIntrinsicAsVariant )
 
 private:
   cv::Mat m_intrinsicMatrix;
@@ -33,9 +38,20 @@ public:
   void SetRotationVector( const cv::Mat& rotationVector );
   void SetTranslationVector( const cv::Mat& translationVector );
 
+  void SetIntrinsic(QVariantList intrinsicMatrixList);
+  void SetDistortion(QVariantList coefficients);
+  void SetExtrinsic(QVariantList extrinsicMatrixList);
+
+  QVariantList		  GetIntrinsicAsVariant( void );
+  QVariantList		  GetDistortionAsVariant( void );
+  QVariantList		  GetExtrinsicAsVariant( void );
+
   const cv::Mat& GetIntrinsic( );
   const cv::Mat& GetDistortion( );
   const cv::Mat& GetExtrinsic( );
+
+private:
+  QVariantList Mat2VariantList( cv::Mat mat );
 };
 
 Q_DECLARE_METATYPE(CalibrationData*)

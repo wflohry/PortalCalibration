@@ -19,8 +19,13 @@ class Utils
 {
 public:
   static unsigned char ClampPixel(int pixel);
-  template <typename T> static T SampleAt(cv::Mat mat, cv::Point2f point);
   static void AssertOrThrowIfFalse(bool condition, string errorMessage);
+  static cv::Ptr<cv::FeatureDetector> NewMarkerDetector( );
+
+  static cv::Mat DitherImage( const cv::Mat originalImage );
+
+  template <typename T> static T 
+	SampleAt(cv::Mat mat, cv::Point2f point);
 };
 
 /**

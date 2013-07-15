@@ -55,6 +55,7 @@ int main(int argc, char* argv[])
   ScriptInterface scriptInterface;
 
   // Add our types
+  scriptInterface.AddObject(scriptInterface, "Global");
   scriptInterface.AddObjectType<LightCrafter>( "LightCrafterProjector" );
   scriptInterface.AddObjectType<LightCommanderProjector>( "LightCommanderProjector" );
   scriptInterface.AddObjectType<CalibrationData>( "CalibrationData" );
