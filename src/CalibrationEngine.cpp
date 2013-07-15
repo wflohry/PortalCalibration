@@ -1,8 +1,8 @@
 #include "CalibrationEngine.h"
 
-CalibrationEngine::CalibrationEngine(const int horizontalCount, const int verticalCount, const float markerSize) :
-  m_boardSize( verticalCount, horizontalCount ), // These are switched since we are dealing with row major matricies
-  m_boardMarkerCount( horizontalCount * verticalCount ),
+CalibrationEngine::CalibrationEngine(const int rows, const int cols, const float markerSize) :
+  m_boardSize( rows, cols ),
+  m_boardMarkerCount( rows * cols ),
   m_markerDiameter( markerSize )
 { }
 
@@ -225,16 +225,16 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(lens::ICamera& capture,
 
   for(int patternNumber = 0; patternNumber < fringeImages.size(); ++patternNumber)
   {
-	auto ditheredImage = Utils::DitherImage(fringeImages[patternNumber]);	
-	projector.ProjectImage(ditheredImage);
+	auto ditheredImage = Utils::DitherImage( fringeImages[patternNumber] );	
+	projector.ProjectImage( ditheredImage );
 	
 	cv::Mat colorFringe( capture.getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );
 	capturedFringes.push_back( gray.clone() );
   }
 
-  NFringeStructuredLight phaseWrapper(fringeImages.size()); 
-  return phaseWrapper.WrapPhase(capturedFringes);
+  NFringeStructuredLight phaseWrapper( fringeImages.size( ) ); 
+  return phaseWrapper.WrapPhase( capturedFringes, cv::createGaussianFilter( CV_32F, cv::Size( 7.0f, 7.0f ), 7.0f/3.0f ) );
 }
 
 CalibrationData* CalibrationEngine::CalibrateView(vector<cv::Point3f> objectPoints, vector<vector<cv::Point2f>> imagePoints, cv::Size viewSize)

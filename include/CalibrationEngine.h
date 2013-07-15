@@ -43,7 +43,7 @@ private:
   const float m_markerDiameter;
 
 public:
-	CalibrationEngine(const int boardWidth, const int boardHeight, const float markerSize);
+	CalibrationEngine(const int rows, const int cols, const float markerSize);
 
 public slots:
 	CalibrationData* CalibrateCameraIntrinsics(lens::ICamera* capture, const int requestedSamples);

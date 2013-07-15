@@ -61,7 +61,7 @@ vector<cv::Mat> NFringeStructuredLight::GenerateFringe( const cv::Size fringeSiz
   return fringeImages;
 }
 
-cv::Mat NFringeStructuredLight::WrapPhase(vector<cv::Mat> fringeImages)
+cv::Mat NFringeStructuredLight::WrapPhase( vector<cv::Mat> fringeImages, cv::Ptr<cv::FilterEngine> filter )
 {
   Utils::AssertOrThrowIfFalse(fringeImages.size() == m_numberOfFringes, 
 	"Invalid number of fringes passed into phase wrapper");
@@ -84,11 +84,12 @@ cv::Mat NFringeStructuredLight::WrapPhase(vector<cv::Mat> fringeImages)
 	}
   }
 
-  // TODO: Comeback and unhardcode this
   // Filter out noise in the sine and cosine components
-  cv::Ptr<cv::FilterEngine> filter = cv::createGaussianFilter( CV_32F, cv::Size(7.0f, 7.0f), 7.0f/3.0f );
-  filter->apply( sine, sine );
-  filter->apply( cosine, cosine );
+  if( !filter.empty( ) )
+  {
+	filter->apply( sine, sine );
+	filter->apply( cosine, cosine );
+  }
 
   // Now perform phase wrapping
   for(int row = 0; row < phase.rows; ++row)

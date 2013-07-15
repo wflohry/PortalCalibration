@@ -23,7 +23,7 @@ public:
 
   virtual float GetPhi0( int pitch ) = 0;
   virtual vector<cv::Mat> GenerateFringe( const cv::Size fringeSize, const int pitch, FringeDirection direction ) = 0;
-  virtual cv::Mat WrapPhase(vector<cv::Mat> fringeImages) = 0;
+  virtual cv::Mat WrapPhase( vector<cv::Mat> fringeImages, cv::Ptr<cv::FilterEngine> filter = cv::Ptr<cv::FilterEngine>( ) ) = 0;
 };
 
 class NFringeStructuredLight : public IStructuredLight
@@ -37,7 +37,7 @@ public:
   
   float GetPhi0( int pitch );
   vector<cv::Mat> GenerateFringe( const cv::Size fringeSize, const int pitch, FringeDirection direction );
-  cv::Mat WrapPhase(vector<cv::Mat> fringeImages);
+  cv::Mat WrapPhase( vector<cv::Mat> fringeImages, cv::Ptr<cv::FilterEngine> filter = cv::Ptr<cv::FilterEngine>( ) );
 };
 
 #endif //_PORTAL_CALIBRATION_N_FRINGE_STRUCTURED_LIGHT_H_
