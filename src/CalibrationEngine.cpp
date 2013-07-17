@@ -10,112 +10,84 @@ CalibrationData* CalibrationEngine::CalibrateCameraIntrinsics(lens::ICamera* cap
 {
   // Grab views and place them in the matrixes
   auto objectPoints = CalculateObjectPoints( ); 
-  auto imagePoints = GrabCameraImagePoints( *capture, requestedSamples );
+  auto imagePoints = GrabSystemImagePoints( *capture, nullptr, requestedSamples );
   // Calibrate for intrinsics
-  return CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth( ), capture->getHeight( ) ) );;
+  return CalibrateView( objectPoints, imagePoints[0], cv::Size( capture->getWidth( ), capture->getHeight( ) ) );;
 }
 
 void CalibrationEngine::CalibrateCameraExtrinsics( lens::ICamera* capture, CalibrationData* calibrationData )
 {
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
-  auto imagePoints = GrabCameraImagePoints( *capture, 1 );
+  auto imagePoints = GrabSystemImagePoints( *capture, nullptr, 1 );
   // Calibrate for projector extrinsics
-  CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
+  CalibrateExtrinsic( objectPoints, imagePoints[0], calibrationData );
 }
 
 CalibrationData* CalibrationEngine::CalibrateProjectorIntrinsics(lens::ICamera* capture, IProjector* projector, int requestedSamples)
 {
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
-  auto imagePoints = GrabProjectorImagePoints( *capture, *projector, requestedSamples );
+  auto imagePoints = GrabSystemImagePoints( *capture, projector, requestedSamples );
   // Calibrate for projector intrinsics
-  return CalibrateView( objectPoints, imagePoints, cv::Size( capture->getWidth(), capture->getHeight( ) ) );
+  return CalibrateView( objectPoints, imagePoints[1], cv::Size( capture->getWidth(), capture->getHeight( ) ) );
 }
 
 void CalibrationEngine::CalibrateProjectorExtrinsics(lens::ICamera* capture, IProjector* projector, CalibrationData* calibrationData)
 {
   // Grab views for the projector
   auto objectPoints = CalculateObjectPoints( );
-  auto imagePoints = GrabProjectorImagePoints( *capture, *projector, 1 ); // Only using 1 since we are capturing for 1 view
+  auto imagePoints = GrabSystemImagePoints( *capture, projector, 1 ); // Only using 1 since we are capturing for 1 view
   // Calibrate for projector extrinsics
-  CalibrateExtrinsic( objectPoints, imagePoints, calibrationData );
+  CalibrateExtrinsic( objectPoints, imagePoints[1], calibrationData );
 }
 
-vector<vector<cv::Point2f>> CalibrationEngine::GrabCameraImagePoints( lens::ICamera& capture, int poses2Capture )
+void CalibrationEngine::StereoCalibrateStructuredLightSystem(IProjector* projector, lens::ICamera* capture, CalibrationData* projectorCalibration, CalibrationData* cameraCalibration, const int requestedSamples )
 {
-	int successes = 0;
-	bool found = false;
-	vector< vector< cv::Point2f > > imagePoints;
-	vector< cv::Point2f > pointBuffer;
+  auto objectPoints = CalculateObjectPoints( );
+  auto systemPoints = GrabSystemImagePoints( *capture, projector, requestedSamples );
 
-	// Create a display to give the user some feedback
-	Display display("Calibration");
-		
-	// While we have boards to grab, grab-em
-	while ( successes < poses2Capture )
+  vector<vector<cv::Point3f>> objectPointList;
+  for(int i = 0; i < systemPoints[0].size(); ++i)
+	{ objectPointList.push_back(objectPoints); }
+
+  cv::Mat rotationMatrix = cv::Mat::zeros(3, 3, CV_64F);
+  cv::Mat translationVector = cv::Mat::zeros(3, 1, CV_64F);
+
+  // We don't need the size since we are fixing the intrinsic ( default flag )
+  // We calibrate in relation to the projector
+  double reprojectError = cv::stereoCalibrate(objectPointList, systemPoints[1], systemPoints[0], 
+	projectorCalibration->GetIntrinsic( ), projectorCalibration->GetDistortion( ), 
+	cameraCalibration->GetIntrinsic( ), cameraCalibration->GetDistortion( ), cv::Size( 0, 0 ),
+	rotationMatrix, translationVector, cv::noArray( ), cv::noArray( ), 
+	cv::TermCriteria( CV_TERMCRIT_ITER+CV_TERMCRIT_EPS, 100, 1e-5 ),
+	CV_CALIB_FIX_INTRINSIC | CV_CALIB_FIX_K3 | CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
+
+  cout << "Stereo Reproject Error: " << reprojectError << endl;
+
+  // Now set the values
+  projectorCalibration->SetTranslationVector( cv::Mat::zeros( 3, 1, CV_64F ) );
+  projectorCalibration->SetRotationMatrix( cv::Mat::eye( 3, 3, CV_64F ) );
+  cameraCalibration->SetTranslationVector( translationVector );
+  cameraCalibration->SetRotationMatrix( rotationMatrix );
+}
+
+vector<vector<vector<cv::Point2f>>> CalibrationEngine::GrabSystemImagePoints(lens::ICamera& capture, IProjector* projector, int poses2Capture )
+{
+    int successes = 0;
+	bool found = false;
+	vector< vector< vector< cv::Point2f > > > imagePoints;
+	vector< vector< cv::Point2f > > cameraPoints;
+	imagePoints.push_back( cameraPoints );
+
+	if( nullptr != projector )
 	{
-	  // Let the user know how many more images we need and how to capture
-	  std::stringstream message;
-	  message << "Press <Enter> to capture pose \n";
-	  message << successes;
-	  message << "/";
-	  message << poses2Capture;
-	  display.OverlayText( message.str() );
+	  vector< vector< cv::Point2f > > projectorPoints;
+	  imagePoints.push_back( projectorPoints );
+	}
 
-	  while ( m_userWaitKey != cvWaitKey( 15 ) )
-	  {
-		// Just display to the user. They are setting up the calibration board
-		cv::Mat frame( capture.getFrame() );
-		cv::drawChessboardCorners( frame, m_boardSize, cv::Mat( pointBuffer ), found );
-		display.ShowImage( frame );
-	  }
-
-	  // User is ready, try and find the circles
-	  pointBuffer.clear();
-	  cv::Mat colorFrame( capture.getFrame( ) );
-	  cv::Mat gray;
-	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
-	  // CALIB_CB_CLUSTERING is used to help reduce problems due to perspective distortions
-	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING, Utils::NewMarkerDetector( ) );
-
-	  // Make sure we found it, and that we found all the points
-	  if(found && pointBuffer.size() == m_boardMarkerCount)
-	  {
-		cv::drawChessboardCorners( colorFrame, m_boardSize, cv::Mat( pointBuffer ), found );
-
-		int key;
-		do
-		{
-		  // Just display to the user. They are setting up the calibration board
-		  display.OverlayText( "Press enter to accept, space to deny" );
-		  display.ShowImage( colorFrame );
-		  key = cvWaitKey( 15 );
-		} while( m_userAcceptKey != key && m_userDenyKey != key);
-
-		if( m_userAcceptKey == key )
-		{
-		  imagePoints.push_back(pointBuffer);
-		  ++successes;
-		}
-		else
-		{
-		  found = false;
-		}
-	  }
-	} // End collection while loop
-
-	return imagePoints;
-}
-
-vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::ICamera& capture, IProjector& projector, int poses2Capture )
-{
-  	int successes = 0;
-	bool found = false;
-	vector< vector< cv::Point2f > > imagePoints;
 	vector< cv::Point2f > pointBuffer;
-
-	cv::Size projectorSize( projector.GetWidth( ), projector.GetHeight( ) );
+	cv::Mat whiteFrame;
 
 	// Create a display to give the user some feedback
 	Display display("Calibration");
@@ -131,10 +103,14 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::IC
 	  message << poses2Capture;
 	  display.OverlayText( message.str() );
 
-	  // Project a white image so that it is easier to see the calibration board
-	  cv::Mat whiteFrame( projectorSize, CV_8UC3, cv::Scalar(255,255,255));
-	  projector.ProjectImage(whiteFrame);
-	  Sleep(200); // Give the projector time to project the image
+	  // Only do this if we have a projector (It's optional)
+	  if( projector != nullptr )
+	  {
+		// Project a white image so that it is easier to see the calibration board
+		whiteFrame = cv::Mat( cv::Size( projector->GetWidth( ), projector->GetHeight( ) ), CV_8UC3, cv::Scalar(255,255,255));
+		projector->ProjectImage(whiteFrame);
+		Sleep(200); // Give the projector time to project the image
+	  }
 
 	  while ( m_userWaitKey != cvWaitKey( 15 ) )
 	  {
@@ -170,21 +146,26 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::IC
 
 		if( m_userAcceptKey == key )
 		{
-		  // We found all the markers in the camera view. Now we need to image with the projector		
-		  auto horizontalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, projector, IStructuredLight::Horizontal);
-		  auto verticalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, projector, IStructuredLight::Vertical);
-
-		  vector< cv::Point2f > projectorPointBuffer;
-		  for(int coord = 0; coord < pointBuffer.size( ); ++coord)
+		  imagePoints[0].push_back( pointBuffer );
+		 
+		  if(nullptr != projector )
 		  {
-			// Use the horizontal unwrapped phase to get the x and vertical for y
-			NFringeStructuredLight fringeGenerator(5);
-			projectorPointBuffer.push_back(cv::Point2f(
-			  InterpolateProjectorPosition(Utils::SampleAt<float>(horizontalUnwrappedPhase, pointBuffer[coord]), fringeGenerator.GetPhi0( 70 ), 70),
-			  InterpolateProjectorPosition(Utils::SampleAt<float>(verticalUnwrappedPhase, pointBuffer[coord]), fringeGenerator.GetPhi0( 70 ), 70)));
+			// We found all the markers in the camera view. Now we need to image with the projector		
+			auto horizontalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, *projector, IStructuredLight::Horizontal);
+			auto verticalUnwrappedPhase = ProjectAndCaptureUnwrappedPhase(capture, *projector, IStructuredLight::Vertical);
+
+			vector< cv::Point2f > projectorPointBuffer;
+			for(int coord = 0; coord < pointBuffer.size( ); ++coord)
+			{
+			  // Use the horizontal unwrapped phase to get the x and vertical for y
+			  NFringeStructuredLight fringeGenerator(5);
+			  projectorPointBuffer.push_back(cv::Point2f(
+				InterpolateProjectorPosition(Utils::SampleAt<float>(horizontalUnwrappedPhase, pointBuffer[coord]), fringeGenerator.GetPhi0( 70 ), 70),
+				InterpolateProjectorPosition(Utils::SampleAt<float>(verticalUnwrappedPhase, pointBuffer[coord]), fringeGenerator.GetPhi0( 70 ), 70)));
+			}
+			imagePoints[1].push_back(projectorPointBuffer);
 		  }
 
-		  imagePoints.push_back(projectorPointBuffer);
 		  ++successes;
 		}
 		else
@@ -194,7 +175,8 @@ vector<vector<cv::Point2f>> CalibrationEngine::GrabProjectorImagePoints(lens::IC
 	  }
 
 	  // Project white again so we can see
-	  projector.ProjectImage(whiteFrame);
+	  if( nullptr != projector )
+		{ projector->ProjectImage(whiteFrame); }
 	} // End collection while loop
 
 	return imagePoints;

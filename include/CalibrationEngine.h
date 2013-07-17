@@ -50,12 +50,11 @@ public slots:
 	void			 CalibrateCameraExtrinsics(lens::ICamera* capture, CalibrationData* calibrationData);
 	CalibrationData* CalibrateProjectorIntrinsics(lens::ICamera* capture, IProjector* projector, const int requestedSamples);
 	void			 CalibrateProjectorExtrinsics(lens::ICamera* capture, IProjector* projector, CalibrationData* calibrationData);
+	void             StereoCalibrateStructuredLightSystem(IProjector* projector, lens::ICamera* capture, CalibrationData* projectorCalibration, CalibrationData* cameraCalibration, const int requestedSamples = 12 );
 
 private:
 	// Used for aquiring the data for calibration
-	vector<vector<cv::Point2f>> GrabCameraImagePoints(lens::ICamera& capture, int poses2Capture );
-	vector<vector<cv::Point2f>> GrabProjectorImagePoints(lens::ICamera& capture, IProjector& projector, int poses2Capture );
-	//vector<vector<cv::Point2f>> GrabImagePoints(lens::ICamera& capture, int poses2Capture, std::function<void(vector<vector<cv::Point2f>>&)> );
+	vector<vector<vector<cv::Point2f>>> GrabSystemImagePoints(lens::ICamera& capture, IProjector* projector = nullptr, int poses2Capture = 12 );
 
 	cv::Mat ProjectAndCaptureUnwrappedPhase(lens::ICamera& capture, IProjector& projector, IStructuredLight::FringeDirection direction);
 	cv::Mat ProjectAndCaptureWrappedPhase(lens::ICamera& capture, IProjector& projector, vector<cv::Mat> fringeImages);
