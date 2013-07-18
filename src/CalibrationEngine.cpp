@@ -60,8 +60,8 @@ void CalibrationEngine::StereoCalibrateStructuredLightSystem(IProjector* project
 	projectorCalibration->GetIntrinsic( ), projectorCalibration->GetDistortion( ), 
 	cameraCalibration->GetIntrinsic( ), cameraCalibration->GetDistortion( ), cv::Size( 0, 0 ),
 	rotationMatrix, translationVector, cv::noArray( ), cv::noArray( ), 
-	cv::TermCriteria( CV_TERMCRIT_ITER+CV_TERMCRIT_EPS, 100, 1e-5 ),
-	CV_CALIB_FIX_INTRINSIC | CV_CALIB_FIX_K3 | CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
+	cv::TermCriteria( CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 100, 1e-5 ),
+	CV_CALIB_FIX_INTRINSIC );
 
   cout << "Stereo Reproject Error: " << reprojectError << endl;
 

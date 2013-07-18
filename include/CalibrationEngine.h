@@ -46,9 +46,9 @@ public:
 	CalibrationEngine(const int rows, const int cols, const float markerSize);
 
 public slots:
-	CalibrationData* CalibrateCameraIntrinsics(lens::ICamera* capture, const int requestedSamples);
+	CalibrationData* CalibrateCameraIntrinsics(lens::ICamera* capture, const int requestedSamples = 12);
 	void			 CalibrateCameraExtrinsics(lens::ICamera* capture, CalibrationData* calibrationData);
-	CalibrationData* CalibrateProjectorIntrinsics(lens::ICamera* capture, IProjector* projector, const int requestedSamples);
+	CalibrationData* CalibrateProjectorIntrinsics(lens::ICamera* capture, IProjector* projector, const int requestedSamples = 12);
 	void			 CalibrateProjectorExtrinsics(lens::ICamera* capture, IProjector* projector, CalibrationData* calibrationData);
 	void             StereoCalibrateStructuredLightSystem(IProjector* projector, lens::ICamera* capture, CalibrationData* projectorCalibration, CalibrationData* cameraCalibration, const int requestedSamples = 12 );
 
