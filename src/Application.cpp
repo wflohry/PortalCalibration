@@ -5,8 +5,15 @@
 // ReelBlink includes
 // Have to include lightcrafter first as it includes winsock2 
 // which must be included before windows.h
+#include <reelblink\config-reelblink.h>
+
+#ifdef USE_LIGHTCRAFTER_PROJECTOR
 #include <reelblink\TiLightCrafter\LightCrafter.h> 
+#endif
+
+#ifdef USE_LIGHTCOMMANDER_PROJECTOR
 #include <reelblink\LightCommanderProjector.h>
+#endif
 
 // OpenCV includes
 #include <cv.h>
@@ -56,8 +63,14 @@ int main(int argc, char* argv[])
 
   // Add our types
   scriptInterface.AddObject(scriptInterface, "Global");
+  #ifdef USE_LIGHTCRAFTER_PROJECTOR
   scriptInterface.AddObjectType<LightCrafter>( "LightCrafterProjector" );
+  #endif
+
+  #ifdef USE_LIGHTCOMMANDER_PROJECTOR
   scriptInterface.AddObjectType<LightCommanderProjector>( "LightCommanderProjector" );
+  #endif
+  
   scriptInterface.AddObjectType<CalibrationData>( "CalibrationData" );
   scriptInterface.AddObjectType<JSSerializer, QString>( "JSSerializer" );
   scriptInterface.AddObjectType<CalibrationEngine, int, int, float>( "CalibrationEngine" );
