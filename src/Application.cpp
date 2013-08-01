@@ -15,6 +15,13 @@
 #include <reelblink\LightCommanderProjector.h>
 #endif
 
+
+#define USE_QTFULLSCREEN
+
+#ifdef USE_QTFULLSCREEN
+#include <reelblink/QTFullscreen.h>
+#endif
+
 // OpenCV includes
 #include <cv.h>
 #include <highgui.h>
@@ -70,6 +77,10 @@ int main(int argc, char* argv[])
   #ifdef USE_LIGHTCOMMANDER_PROJECTOR
   scriptInterface.AddObjectType<LightCommanderProjector>( "LightCommanderProjector" );
   #endif
+
+  //#ifdef  USE_QTFULLSCREEN
+  scriptInterface.AddObjectType<QTFullscreen>("QTFullscreen");
+  //#endif
   
   scriptInterface.AddObjectType<CalibrationData>( "CalibrationData" );
   scriptInterface.AddObjectType<JSSerializer, QString>( "JSSerializer" );

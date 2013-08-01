@@ -23,7 +23,7 @@ set (LIBS ${LIBS} ${OpenCV_LIBS})
 
 #   QT
 #   -------------------------------------
-find_package(Qt4 COMPONENTS QtCore QtScript REQUIRED)
+find_package(Qt4 COMPONENTS QtCore QtGui QtScript REQUIRED)
 include(${QT_USE_FILE})
 set (LIBS ${LIBS} ${QT_LIBRARIES})
 
