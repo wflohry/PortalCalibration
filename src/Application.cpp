@@ -61,10 +61,10 @@
 
 int main(int argc, char* argv[])
 {
-  QCoreApplication app(argc, argv);
-  QCoreApplication::setOrganizationName("SL Studios");
-  QCoreApplication::setOrganizationDomain("SLStudios.org");
-  QCoreApplication::setApplicationName("PortalCalibration");
+  QApplication app(argc, argv);
+  QApplication::setOrganizationName("SL Studios");
+  QApplication::setOrganizationDomain("SLStudios.org");
+  QApplication::setApplicationName("PortalCalibration");
 
   ScriptInterface scriptInterface;
 
@@ -79,12 +79,12 @@ int main(int argc, char* argv[])
   #endif
 
   //#ifdef  USE_QTFULLSCREEN
-  scriptInterface.AddObjectType<QTFullscreen>("QTFullscreen");
+  scriptInterface.AddObjectType<QTFullscreen, int>("QTFullscreen");
   //#endif
   
   scriptInterface.AddObjectType<CalibrationData>( "CalibrationData" );
   scriptInterface.AddObjectType<JSSerializer, QString>( "JSSerializer" );
-  scriptInterface.AddObjectType<CalibrationEngine, int, int, float>( "CalibrationEngine" );
+  scriptInterface.AddObjectType<CalibrationEngine, int, int, float, bool>( "CalibrationEngine" );
   
   // Add our camera types
   scriptInterface.AddObjectType<lens::OpenCVCamera>( "OpenCVCamera" );

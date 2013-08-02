@@ -1,9 +1,10 @@
 #include "CalibrationEngine.h"
 
-CalibrationEngine::CalibrationEngine(const int rows, const int cols, const float markerSize) :
+CalibrationEngine::CalibrationEngine(const int rows, const int cols, const float markerSize, const bool useDithered) :
   m_boardSize( rows, cols ),
   m_boardMarkerCount( rows * cols ),
-  m_markerDiameter( markerSize )
+  m_markerDiameter( markerSize ),
+  m_useDithered(useDithered)
 { }
 
 CalibrationData* CalibrationEngine::CalibrateCameraIntrinsics(lens::ICamera* capture, int requestedSamples)
@@ -207,8 +208,12 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(lens::ICamera& capture,
 
   for(int patternNumber = 0; patternNumber < fringeImages.size(); ++patternNumber)
   {
-	auto ditheredImage = Utils::DitherImage( fringeImages[patternNumber] );	
-	projector.ProjectImage( ditheredImage );
+	if (m_useDithered){
+		auto ditheredImage = Utils::DitherImage( fringeImages[patternNumber] );	
+		projector.ProjectImage( ditheredImage );
+	} else {
+		projector.ProjectImage( fringeImages[patternNumber] );
+	}
 	
 	cv::Mat colorFringe( capture.getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );

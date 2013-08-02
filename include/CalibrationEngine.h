@@ -42,9 +42,10 @@ private:
   const cv::Size m_boardSize;
   const int m_boardMarkerCount;
   const float m_markerDiameter;
+  const bool m_useDithered;
 
 public:
-	CalibrationEngine(const int rows, const int cols, const float markerSize);
+	CalibrationEngine(const int rows, const int cols, const float markerSize, const bool useDithered = false);
 
 public slots:
 	CalibrationData* CalibrateCameraIntrinsics(lens::ICamera* capture, const int requestedSamples = 12);

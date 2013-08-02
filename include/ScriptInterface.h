@@ -64,6 +64,13 @@ public:
 	  m_scriptEngine.newFunction( ScriptInterface::CreateScriptableObject<objectType, arg0, arg1, arg2> ) );
   }
 
+   template <typename objectType, typename arg0, typename arg1, typename arg2, typename arg3>
+	void		AddObjectType( QString name )
+	{
+		m_scriptEngine.globalObject( ).setProperty( name, 
+			m_scriptEngine.newFunction( ScriptInterface::CreateScriptableObject<objectType, arg0, arg1, arg2, arg3> ) );
+	}
+
   template <typename objectType>
 	void RegisterMetaObjectType( void )
   { qScriptRegisterMetaType( &m_scriptEngine, ScriptInterface::Object2ScriptValue<objectType>, ScriptInterface::ScriptValue2Object<objectType> ); }
@@ -113,5 +120,16 @@ private:
 
 	return engine->newQObject( new objectType( argument0, argument1, argument2 ), QScriptEngine::AutoOwnership, QScriptEngine::AutoCreateDynamicProperties );
   }
+
+	template <typename objectType, typename arg0, typename arg1, typename arg2, typename arg3>
+	static QScriptValue CreateScriptableObject( QScriptContext* context, QScriptEngine* engine )
+	{
+		arg0 argument0 = qscriptvalue_cast<arg0>( context->argument(0) );
+		arg1 argument1 = qscriptvalue_cast<arg1>( context->argument(1) );
+		arg2 argument2 = qscriptvalue_cast<arg2>( context->argument(2) );
+		arg3 argument3 = qscriptvalue_cast<arg3>( context->argument(3) );
+
+		return engine->newQObject( new objectType( argument0, argument1, argument2, argument3 ), QScriptEngine::AutoOwnership, QScriptEngine::AutoCreateDynamicProperties );
+	}
 };
 #endif	// _PORTAL_CAPTURE_SCRIPT_INTERFACE_H_
