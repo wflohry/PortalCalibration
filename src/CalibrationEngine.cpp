@@ -128,6 +128,7 @@ vector<vector<vector<cv::Point2f>>> CalibrationEngine::GrabSystemImagePoints(len
 	  cv::Mat colorFrame( capture.getFrame( ) );
 	  cv::Mat gray;
 	  cv::cvtColor( colorFrame, gray, CV_BGR2GRAY);
+
 	  // CALIB_CB_CLUSTERING is used to help reduce problems due to perspective distortions
 	  found = cv::findCirclesGrid( gray, m_boardSize, pointBuffer, cv::CALIB_CB_ASYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING , Utils::NewMarkerDetector( ) );
 
@@ -215,6 +216,11 @@ cv::Mat CalibrationEngine::ProjectAndCaptureWrappedPhase(lens::ICamera& capture,
 		projector.ProjectImage( fringeImages[patternNumber] );
 	}
 	
+	//If the projector & camera are not synched, it is possible to get a stale
+	//frame. By adding this sleep and an *extra* getFrame, we force the camera
+	//to get the new projected image
+	Sleep(400);
+
 	cv::Mat colorFringe( capture.getFrame( ) );
 	cv::cvtColor( colorFringe, gray, CV_BGR2GRAY );
 	capturedFringes.push_back( gray.clone() );
